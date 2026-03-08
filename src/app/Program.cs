@@ -1,6 +1,7 @@
 using LeaderboardApp.Models;
 using LeaderboardApp.Security;
 using LeaderboardApp.Services;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,7 @@ namespace LeaderboardApp
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Configuration.AddEnvironmentVariables();
+
 
             // Configure Kestrel for flexible HTTPS
             builder.WebHost.ConfigureKestrel(serverOptions =>
@@ -56,6 +58,10 @@ namespace LeaderboardApp
             var jwtSettingsSection = builder.Configuration.GetSection("JwtSettings");
             builder.Services.Configure<JwtSettings>(jwtSettingsSection);
             var jwtSettings = jwtSettingsSection.Get<JwtSettings>();
+
+            // Register challenge schedule configuration
+            builder.Services.Configure<ChallengeScheduleConfig>(
+                builder.Configuration.GetSection("ChallengeSchedule"));
 
             // Configure JWT Authentication - Comment below section out for TAL SSO
             //builder.Services.AddAuthentication(options =>

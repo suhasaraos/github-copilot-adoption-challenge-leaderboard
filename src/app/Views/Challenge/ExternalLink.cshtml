@@ -7,9 +7,22 @@
 
 <div class="container mt-5">
     <div class="card shadow-sm" style="border-radius: 8px;">
-        <div class="card-body">
+        <div class="card-body" style="position: relative;">
+            <!-- Completion icon: top-right corner -->
+            <div style="position: absolute; top: 16px; right: 16px;">
+                @if (Model.IsCompleted)
+                {
+                    <img src="~/images/tickmarkicon.png" alt="Completed" title="You have completed this challenge" style="width: 28px; height: 28px;" />
+                }
+                else
+                {
+                    <img src="~/images/pendingicon.png" alt="Pending" title="Not yet completed" style="width: 28px; height: 28px;" />
+                }
+            </div>
             <!-- Title -->
-            <h2 class="mb-4">@Model.Title</h2>
+            <div class="mb-4">
+                <h2 style="margin: 0;">@Model.Title</h2>
+            </div>
 
             <!-- Content -->
             @if (!string.IsNullOrEmpty(Model.Content))

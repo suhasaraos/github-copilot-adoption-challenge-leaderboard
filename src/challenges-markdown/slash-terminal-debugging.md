@@ -19,7 +19,7 @@ In this debugging exercise you will intentionally break a script in your reposit
 
 ### Prerequisites
 
-Confirm Copilot Chat is enabled in **your IDE** such as VS Code JetBrains or Visual Studio. Open a repository that contains a script you can safely modify for example a Bash or Python utility.
+Confirm Copilot Chat is enabled in VS Code or Visual Studio. Open a repository that contains a script you can safely modify for example a Bash or Python utility.
 
 ### Steps
 
@@ -56,4 +56,4 @@ Confirm Copilot Chat is enabled in **your IDE** such as VS Code JetBrains or Vis
 
 ### Explore more
 
-- [Terminal use overview](https://docs.github.com/en/copilot/responsible-use-of-github-copilot-features/responsible-use-of-github-copilot-in-windows-terminal)
+- [VS Code chat tools](https://code.visualstudio.com/docs/copilot/reference/copilot-vscode-features#_chat-tools)

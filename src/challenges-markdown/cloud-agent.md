@@ -16,11 +16,11 @@ In this exercise you will use the **GitHub Copilot coding agent** (cloud agent) 
 
 ### Before you start
 
-Ensure your GitHub organization has **Copilot coding agent** enabled. You need write access to a repository hosted on GitHub. Have the latest VS Code with the GitHub Copilot Chat extension installed.
+Ensure your GitHub organization has **Copilot coding agent** (Cloud Agent) enabled. You need write access to a repository hosted on GitHub. Have the latest VS Code with the GitHub Copilot Chat extension installed.
 
 ### Steps
 
-- **Step 1.** Open Copilot Chat in VS Code and select **Cloud** from the session type dropdown at the top of the panel.
+- **Step 1.** Open a new Copilot Chat Session in VS Code and select **Cloud** from the session type dropdown at the bottom of the chat panel.
 
 - **Step 2.** Enter a refactoring prompt that affects multiple files, for example: `Refactor the logging module to use structured logging with JSON output across all services.`
 
@@ -30,13 +30,13 @@ Ensure your GitHub organization has **Copilot coding agent** enabled. You need w
 
 - **Step 5.** Review the diff, inspect the commit messages the agent wrote, and verify tests pass in CI.
 
-- **Step 6.** Alternatively, start a **Plan** session locally by switching to Plan mode. After the plan is generated, click **Hand off to cloud agent** to let the coding agent execute the plan remotely.
+- **Step 6.** Alternatively, start a **Plan** session locally by switching to Plan mode. After the plan is generated, click **Hand off to cloud agent** to let the Copilot Coding agent execute the plan remotely.
 
 - **Step 7.** Merge the pull request once you are satisfied with the changes.
 
 ### Checkpoint
 
-1. Did the cloud agent successfully create a remote session and begin working on your prompt
+1. Did the Cloud agent successfully create a remote session and begin working on your prompt
 
 - [ ] Yes
 - [ ] No
@@ -53,7 +53,7 @@ Ensure your GitHub organization has **Copilot coding agent** enabled. You need w
 
 ### Explore more
 
-- [Cloud agents in VS Code](https://code.visualstudio.com/docs/copilot/chat/cloud-agents)
+- [Cloud agents in VS Code](https://code.visualstudio.com/docs/copilot/agents/cloud-agents)
 
-- [Copilot coding agent on GitHub](https://docs.github.com/en/copilot/using-github-copilot/using-the-copilot-coding-agent)
+- [Copilot coding agent on GitHub](https://docs.github.com/en/enterprise-cloud@latest/copilot/concepts/agents/coding-agent/about-coding-agent)
 

@@ -9,7 +9,7 @@ In this rapid prototyping exercise, you will upload a photo of a hand-drawn or e
 
 ### What you will learn
 
-- Adding image context to Copilot Chat Vision Preview.
+- Adding image context to Copilot Chat Vision/Images (Preview feature).
 
 - Prompting Copilot to scaffold HTML and CSS from a wireframe.
 
@@ -19,17 +19,17 @@ In this rapid prototyping exercise, you will upload a photo of a hand-drawn or e
 
 ### Before you start
 
-Copilot Chat Vision Preview is available in **VS Code Nightly** with the Copilot extension enabled. Place a photo or scan of your wireframe in the repository for example `docs/wireframe.jpg`.
+**Copilot Chat Vision is currently in Preview and the preview features must be enabled in the Enterprise/Organization policy**. Place a photo or scan of your wireframe in the repository for example `docs/wireframe.jpg`.
 
 ### Steps
 
 - **Step 1.** Create a new branch called `vision-prototype` with `git checkout -b vision-prototype` or the source control panel.
 
-- **Step 2.** Open Copilot Chat in VS Code in EDIT mode and drag the wireframe image into the chat box. Wait until the thumbnail appears. Example:
+- **Step 2.** Open Copilot Chat in VS Code in Agent mode and drag the wireframe image into the chat box. Wait until the thumbnail appears. Example:
 
 - **Step 3.** Type `Scaffold responsive HTML and CSS for this layout place files in prototype folder` then press Enter.
 
-- **Step 4.** Copilot returns one or more files. Accept each file with **Tab** so they appear under `prototype/`.
+- **Step 4.** Copilot agent returns one or more files. Accept the generated files so they appear under `prototype/`.
 
 - **Step 5.** Open `prototype/index.html` in the Live Preview extension or a local browser. Resize the window to confirm the layout adapts to mobile and desktop widths.
 
@@ -58,8 +58,4 @@ Copilot Chat Vision Preview is available in **VS Code Nightly** with the Copilot
 
 - [Vscode copilot vision](https://github.com/microsoft/vscode-copilot-vision)
 
-- [Copilot Edits VS 2022 overview](https://learn.microsoft.com/en-us/visualstudio/ide/copilot-edits)
-
-- [Copilot Edits VS Code overview](https://code.visualstudio.com/docs/copilot/chat/copilot-edits)
-
-- [Copilot Edits Jetbrains overview](https://github.blog/changelog/2025-03-20-enhance-your-productivity-with-copilot-edits-in-jetbrains-ides/)
+- [Using images in Copilot Chat](https://docs.github.com/en/copilot/how-tos/chat-with-copilot/chat-in-ide#using-images-in-copilot-chat)

@@ -25,13 +25,13 @@ Ensure GitHub Copilot Chat is enabled in **your IDE** (VS Code JetBrains Visual 
 
 - **Step 1.** Place the cursor inside the file you recently edited. No need to select text.
 
-- **Step 2.** Open Copilot Chat. In VS Code click the Copilot icon in the Activity Bar. In JetBrains choose **View > Tool Windows > Copilot Chat**.
+- **Step 2.** Open Copilot Chat. In VS Code click the Copilot icon in the Activity Bar and open a new local chat session, Agent or Ask mode. In JetBrains choose **View > Tool Windows > Copilot Chat**.
 
 - **Step 3.** In the chat box type `/tests` and press Enter. Copilot will respond with a proposed test file tailored to the file under the cursor.
 
 - **Step 4.** Review the generated code. Use **Tab** to accept or **Esc** to reject and retry. If accepted Copilot inserts the new test file in the correct folder.
 
-- **Step 5.** Run your normal test command such as `npm test` `pytest` or `dotnet test`. Confirm that all tests pass.
+- **Step 5.** Run your normal test command such as `npm test` `pytest` or `dotnet test`. Confirm that all tests pass. **Tip** - Ask Copilot about how to run the tests manually
 
 - **Step 6.** Commit the new test file with a clear message. You can let Copilot draft the commit message if you pause at the prompt.
 
@@ -54,8 +54,6 @@ Ensure GitHub Copilot Chat is enabled in **your IDE** (VS Code JetBrains Visual 
 
 ### Explore more
 
-- [Copilot Chat slash commands reference](https://learn.microsoft.com/en-us/visualstudio/ide/copilot-chat-context)
-
-- [Using Copilot Chat overview](https://docs.github.com/en/copilot/using-github-copilot/copilot-chat/asking-github-copilot-questions-in-your-ide)
+- [Copilot Chat slash commands reference](https://code.visualstudio.com/docs/copilot/reference/copilot-vscode-features#_slash-commands)
 
 - [Generating tests with Copilot tutorial](https://docs.github.com/en/copilot/using-github-copilot/guides-on-using-github-copilot/writing-tests-with-github-copilot)

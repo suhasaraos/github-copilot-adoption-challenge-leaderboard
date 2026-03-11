@@ -10,7 +10,7 @@ In this hands-on exercise you will delegate complex, multi-step tasks to **subag
 ### What you will learn
 
 - Understanding how subagents provide isolated context for subtasks.
-- Prompting the primary agent so it delegates work to a subagent automatically.
+- Prompting the primary/default agent so it delegates work to a subagent automatically.
 - Observing parallel subagent execution in the Copilot Chat panel.
 - Using a custom agent definition to act as a reusable subagent.
 
@@ -20,9 +20,11 @@ Ensure you are running VS Code with the latest GitHub Copilot Chat extension. Ag
 
 ### Steps
 
-- **Step 1.** Open Copilot Chat and switch to **Agent** mode using the mode picker at the top of the panel.
+- **Step 1.** Open a Local Copilot Chat session and switch to **Agent** mode using the mode picker at the bottom of the panel.
 
-- **Step 2.** Enter a prompt that naturally requires delegation, for example: `Research all the public API endpoints in this project and then create a Markdown summary table listing each endpoint, its HTTP method, route, and purpose.`
+- **Step 2.** Enter a prompt that naturally requires delegation, for example: `Review the entire codebase and perform an extensive research across all the public API endpoints in this project in parallel and then create a Markdown summary for each API endpoint that provides the following details - HTTP method, route, purpose, and enhancements.`
+
+  **NOTE:** VS Code automatically (optionally) invokes built-in subagents depending on the task. If you don't see the subagents being automatically, you can try adding this to the prompt `Leverage subagents if needed`. **Tip** - Retry the task with a complex task involving the entire repo if this still doesn't work!
 
 - **Step 3.** Watch the Chat panel. The agent should spawn a subagent to research the codebase. You will see a collapsed **Subagent** node appear with its own tool calls and progress indicator.
 
@@ -32,7 +34,7 @@ Ensure you are running VS Code with the latest GitHub Copilot Chat extension. Ag
 
 - **Step 6.** In a new chat session, prompt the agent to use your custom researcher agent: `@researcher Find all TODO comments across the project and categorize them by priority.`
 
-- **Step 7.** Verify the custom agent executed as a subagent and returned structured results to the primary conversation.
+- **Step 7.** Verify the custom agent is executed as a subagent and returned structured results to the primary conversation.
 
 ### Checkpoint
 
@@ -53,7 +55,7 @@ Ensure you are running VS Code with the latest GitHub Copilot Chat extension. Ag
 
 ### Explore more
 
-- [Subagents in VS Code](https://code.visualstudio.com/docs/copilot/chat/subagents)
+- [Subagents in VS Code](https://code.visualstudio.com/docs/copilot/agents/subagents)
 
-- [Custom agents overview](https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode#_custom-agents)
+- [Custom agents overview](https://code.visualstudio.com/docs/copilot/customization/custom-agents)
 

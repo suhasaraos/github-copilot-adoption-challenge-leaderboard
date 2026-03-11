@@ -25,7 +25,7 @@ Ensure VS Code has the latest GitHub Copilot Chat extension. Enable agent mode i
 
 - **Step 2.** Switch to **Plan** mode. Enter: `Add input validation to all API controller methods.` Copilot generates a step-by-step plan listing files to change and what to modify.
 
-- **Step 3.** Review the generated plan. Edit or reorder steps if needed. When satisfied, click **Start implementing** to hand off to Agent mode.
+- **Step 3.** Review the generated plan. Edit or reorder steps if needed. When satisfied, click **Start Implementation** to hand off to Agent mode.
 
 - **Step 4.** Observe Agent mode executing each step. Inline diffs appear in the editor as files are modified. A checkpoint is created after each step so you can undo individual changes.
 
@@ -54,7 +54,7 @@ Ensure VS Code has the latest GitHub Copilot Chat extension. Enable agent mode i
 
 ### Explore more
 
-- [Local agents in VS Code](https://code.visualstudio.com/docs/copilot/chat/local-agents)
+- [Local agents in VS Code](https://code.visualstudio.com/docs/copilot/agents/local-agents)
 
 - [Copilot Chat agent mode tutorial](https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode)
 

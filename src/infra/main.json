@@ -556,7 +556,7 @@
                         "virtualNetworkSubnetId": "[parameters('subnets')[0].id]",
                         "siteConfig": {
                           "scmType": "VSTSRM",
-                          "linuxFxVersion": "DOTNETCORE|8.0",
+                          "linuxFxVersion": "DOTNETCORE|10.0",
                           "appSettings": [
                             {
                               "name": "ConnectionStrings__DefaultConnection",

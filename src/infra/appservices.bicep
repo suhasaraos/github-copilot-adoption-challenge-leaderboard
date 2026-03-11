@@ -77,7 +77,7 @@ resource webApp 'Microsoft.Web/sites@2024-11-01' = {
     publicNetworkAccess: 'Enabled'
     siteConfig: {
       scmType: 'VSTSRM'
-      linuxFxVersion: 'DOTNETCORE|8.0'
+      linuxFxVersion: 'DOTNETCORE|10.0'
       scmIpSecurityRestrictionsUseMain: false
       appSettings: [
         {

@@ -5,33 +5,33 @@ ActivityId: 12
 
 ### Summary
 
-In this advanced workflow, you’ll configure a **GitHub Copilot knowledge base** so that the Copilot Agent can reference your organization’s internal documentation. You’ll then ask the Agent to draft an ADR proposing a migration from a monolith to microservices. This task takes about thirty minutes.
+In this advanced workflow, you'll configure a **GitHub Copilot Space** to centralize your project context so that Copilot can reference your organization's internal documentation and code. You'll then ask Copilot to draft an ADR proposing a migration from a monolith to microservices. This task takes about thirty minutes.
 
 ### What you will learn
 
-- Creating and managing a GitHub Copilot knowledge base.
+- Creating and configuring a GitHub Copilot Space.
 
-- Adding document sources to the knowledge base.
+- Adding code, documents, and custom instructions to a Space.
 
-- Connecting a Copilot Agent in VS Code to your knowledge base.
+- Sharing a Space across your organization to scale expertise.
 
-- Prompting the Agent to draft an ADR using contextual knowledge.
+- Prompting Copilot in a Space to draft an ADR using contextual knowledge.
 
 ### Before you start
 
-Ensure your organization has **GitHub Copilot Enterprise** enabled. You must be an organization owner or have appropriate permissions to manage Copilot settings. Prepare your documentation (Markdown, text, or supported formats) and ensure it is stored in a GitHub repository or external location that can be added to a knowledge base.
+Copilot Spaces are available to all GitHub Copilot users at [github.com/copilot/spaces](https://github.com/copilot/spaces). If you are on a **Copilot Business** or **Copilot Enterprise** plan, your organization admin must opt in to Copilot preview features. Prepare your documentation (Markdown, text, or supported formats) and ensure it is stored in a GitHub repository so it can be attached directly to the Space.
 
 ### Steps
 
-- **Step 1.** Navigate to your organization settings on GitHub.com. Under **Copilot**, click **Knowledge bases**, then click **New knowledge base**.
+- **Step 1.** Navigate to [github.com/copilot/spaces](https://github.com/copilot/spaces) and click **New space**. If creating a shared space for your organization, select your organization as the owner.
 
-- **Step 2.** Give your knowledge base a name (e.g., `Architecture Docs`) and add sources. You can include repositories, folders, or external links as needed.
+- **Step 2.** Give your Space a name (e.g., `Architecture Docs`) and add context sources. Click **Add context**, then select **Repository** to attach your architecture documentation repository directly from GitHub.
 
-- **Step 3.** Save the knowledge base and ensure it's accessible to Copilot Agents in your organization.
+- **Step 3.** Add any additional files, notes, or specs relevant to your system's design by clicking **Add context** and choosing the appropriate source type.
 
-- **Step 4.** In VS Code, switch to Copilot **Agent** mode and confirm your organization’s knowledge base appears in the sidebar.
+- **Step 4.** Optionally, define **Custom instructions** within the Space to further tailor Copilot's responses — for example, specifying the ADR format your team follows.
 
-- **Step 5.** Create a new branch with `git checkout -b adr-microservices`. Then in the Agent chat, type:
+- **Step 5.** Create a new branch with `git checkout -b adr-microservices`. Then open the Space chat and type:
 `Draft an Architecture Decision Record for migrating our monolith to microservices using our current architecture documents as context.`
 
 - **Step 6.** Review the generated ADR, which should include: *Context*, *Decision*, *Status*, and *Consequences*.
@@ -40,12 +40,12 @@ Ensure your organization has **GitHub Copilot Enterprise** enabled. You must be 
 
 ### Checkpoint
 
-1. Did you successfully configure a Copilot knowledge base?
+1. Did you successfully create a Copilot Space and add your documentation as context?
 
 - [ ] Yes
 - [ ] No
 
-2. Did the Agent cite information from your documentation in the ADR draft?
+2. Did Copilot cite information from your documentation in the ADR draft?
 
 - [ ] Yes
 - [ ] No
@@ -57,8 +57,6 @@ Ensure your organization has **GitHub Copilot Enterprise** enabled. You must be 
 
 ### Explore more
 
-- [Managing Copilot knowledge bases](https://docs.github.com/en/enterprise-cloud@latest/copilot/customizing-copilot/managing-copilot-knowledge-bases)
-
-- [Copilot Agents and Workspace overview](https://githubnext.com/projects/copilot-workspace)
+- [Copilot Spaces](https://docs.github.com/copilot/using-github-copilot/copilot-spaces/about-organizing-and-sharing-context-with-copilot-spaces)
 
 - [Markdown ADR template](https://adr.github.io/madr/)

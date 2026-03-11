@@ -9,7 +9,7 @@ In this exercise you will use **GitHub Copilot CLI** to suggest and run a comman
 
 ### What you will learn
 
-- Running `gh copilot suggest` to generate shell commands.
+- Running `copilot -p` to generate shell commands directly in the terminal.
 
 - Executing the generated command directly from the CLI prompt.
 
@@ -19,21 +19,21 @@ In this exercise you will use **GitHub Copilot CLI** to suggest and run a comman
 
 ### Prerequisites
 
-Confirm that GitHub CLI is installed with `gh --version`. Install the Copilot extension if needed using `gh extension install github/gh-copilot`. Authenticate with `gh auth login` and open a terminal in the root of a repository that has multiple merged branches.
+Confirm that the latest version of Copilot CLI is installed with `copilot --version`. Use the `-p` flag for non-interactive, direct output. Authenticate with `gh auth login` and open a terminal in the root of a repository that has multiple merged branches.
 
 ### Steps
 
 - **Step 1.** In the project root run the following command and press Enter.
 
-`gh copilot suggest "clean local merged branches"`
+`copilot -p "clean local merged branches"`
 
-- **Step 2.** Review the suggestion displayed by Copilot CLI. It should resemble `git branch --merged | grep -v "main" | xargs -n 1 git branch -d`.
+- **Step 2.** Copilot CLI prints the suggested command directly in the terminal — it should resemble `git branch --merged | grep -v "main" | xargs -n 1 git branch -d`.
 
-- **Step 3.** When prompted choose the option to execute the command. If your terminal does not prompt automatically run the suggested command manually.
+- **Step 3.** Copy the suggested command, paste it into your terminal, and run it.
 
 - **Step 4.** After execution run `git branch` to list local branches and confirm that only active branches remain.
 
-- **Step 5.** Explore other cleanup ideas by running `gh copilot suggest "list large files in repo"` or a command of your choice.
+- **Step 5.** Explore other cleanup ideas by running `copilot -p "list large files in repo"` or a command of your choice. You might need to use Administrative permissions or `sudo` for this to work.
 
 - **Step 6.** Commit any auxiliary changes if applicable and push to remote.
 
@@ -56,6 +56,4 @@ Confirm that GitHub CLI is installed with `gh --version`. Install the Copilot ex
 
 ### Explore more
 
-- [GitHub Copilot CLI project page](https://githubnext.com/projects/copilot-cli)
-
-- [Copilot command reference](https://docs.github.com/en/copilot/using-github-copilot/copilot-chat/github-copilot-chat-cheat-sheet)
+- [GitHub Copilot in the CLI](https://docs.github.com/en/copilot/github-copilot-in-the-cli/about-github-copilot-in-the-cli)

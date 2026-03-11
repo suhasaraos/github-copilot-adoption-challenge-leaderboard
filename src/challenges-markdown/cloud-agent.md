@@ -30,7 +30,7 @@ Ensure your GitHub organization has **Copilot coding agent** (Cloud Agent) enabl
 
 - **Step 5.** Review the diff, inspect the commit messages the agent wrote, and verify tests pass in CI.
 
-- **Step 6.** Alternatively, start a **Plan** session locally by switching to Plan mode. After the plan is generated, click **Hand off to cloud agent** to let the Copilot Coding agent execute the plan remotely.
+- **Step 6.** Alternatively, start a **Plan** session locally by switching to Plan mode. After the plan is generated, switch to the cloud agent using the Session dropdown option and select **continue in Cloud**. Ask the agent to implement the changes and let the Copilot Coding agent execute the plan remotely.
 
 - **Step 7.** Merge the pull request once you are satisfied with the changes.
 

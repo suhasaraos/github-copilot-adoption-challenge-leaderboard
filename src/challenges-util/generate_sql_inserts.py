@@ -96,82 +96,81 @@ class ChallengeProcessor:
     
     def convert_binary_answers_in_html(self, html_content: str, title: str) -> str:
         """
-        Transform binary answer prompts in HTML to radio button inputs.
-        
-        This handles:
-        1. Text patterns like "Yes / No", "True/False" after questions
-        2. Checkbox patterns with consecutive "- [ ] Yes" and "- [ ] No" lines
-        
+        Transform checkbox-style answer lists in HTML into radio button groups.
+
+        Each <ul> where every <li> starts with "[ ]" is treated as a
+        single-choice question and is converted to a set of radio inputs that
+        share a unique group name.  A fresh group name is generated for every
+        such <ul>, so users can answer each question independently.
+
+        This handles any number of options per question (Yes/No, True/False,
+        1/2/3/4, A/B/C/D, etc.) and does not hard-code specific answer values.
+
         Args:
-            html_content: HTML content
-            title: Title for generating radio input name (slugified)
-            
+            html_content: HTML content produced by markdown_to_html
+            title: Challenge title, used to build unique radio-group names
+
         Returns:
             Modified HTML with radio inputs
         """
         slug = self.slugify(title)
-        question_counter = 1
-        
-        # Pattern 1: Handle checkbox-style radio button pairs that markdown creates as lists
-        # Look for patterns like <li>[ ] Yes</li> followed by <li>[ ] No</li> or similar
-        # But first convert checkbox patterns in the markdown before HTML conversion
-        
-        # For now, we'll handle this after HTML conversion by looking for list patterns
-        # Pattern: <ul><li>[ ] Yes</li><li>[ ] No</li></ul> or similar
-        
-        checkbox_patterns = [
-            (r'<li>\[\s*\]\s*Yes\s*</li>\s*<li>\[\s*\]\s*No\s*</li>', 
-             f'<label><input type="radio" name="{slug}-q{question_counter}" value="yes"> Yes</label><label><input type="radio" name="{slug}-q{question_counter}" value="no"> No</label>'),
-            (r'<li>\[\s*\]\s*No\s*</li>\s*<li>\[\s*\]\s*Yes\s*</li>', 
-             f'<label><input type="radio" name="{slug}-q{question_counter}" value="no"> No</label><label><input type="radio" name="{slug}-q{question_counter}" value="yes"> Yes</label>'),
-            (r'<li>\[\s*\]\s*True\s*</li>\s*<li>\[\s*\]\s*False\s*</li>', 
-             f'<label><input type="radio" name="{slug}-q{question_counter}" value="true"> True</label><label><input type="radio" name="{slug}-q{question_counter}" value="false"> False</label>'),
-            (r'<li>\[\s*\]\s*False\s*</li>\s*<li>\[\s*\]\s*True\s*</li>', 
-             f'<label><input type="radio" name="{slug}-q{question_counter}" value="false"> False</label><label><input type="radio" name="{slug}-q{question_counter}" value="true"> True</label>'),
-        ]
-        
-        for pattern, replacement in checkbox_patterns:
-            html_content = re.sub(pattern, replacement, html_content)
-            question_counter += 1
-        
-        # Pattern 2: Handle text patterns like "Yes / No", "True/False" after paragraphs
-        # Look for patterns like "Yes / No", "Yes/No", "No / Yes", "True / False", "True/False"
-        text_patterns = [
-            (r'Yes\s*/\s*No', f'<label><input type="radio" name="{slug}-q{question_counter}" value="yes"> Yes</label> / <label><input type="radio" name="{slug}-q{question_counter}" value="no"> No</label>'),
-            (r'No\s*/\s*Yes', f'<label><input type="radio" name="{slug}-q{question_counter}" value="no"> No</label> / <label><input type="radio" name="{slug}-q{question_counter}" value="yes"> Yes</label>'),
-            (r'True\s*/\s*False', f'<label><input type="radio" name="{slug}-q{question_counter}" value="true"> True</label> / <label><input type="radio" name="{slug}-q{question_counter}" value="false"> False</label>'),
-            (r'False\s*/\s*True', f'<label><input type="radio" name="{slug}-q{question_counter}" value="false"> False</label> / <label><input type="radio" name="{slug}-q{question_counter}" value="true"> True</label>'),
-        ]
-        
-        for pattern, replacement in text_patterns:
-            # Use a counter to handle multiple questions
-            matches = re.finditer(pattern, html_content)
-            match_list = list(matches)
-            # Replace in reverse order to maintain indices
-            for match in reversed(match_list):
-                qnum = question_counter
-                question_counter += 1
-                slug_q = f"{slug}-q{qnum}"
-                
-                if "Yes" in pattern or "yes" in replacement:
-                    if "/" in pattern:
-                        if "Yes" in pattern[:5]:
-                            repl = f'<label><input type="radio" name="{slug_q}" value="yes"> Yes</label> / <label><input type="radio" name="{slug_q}" value="no"> No</label>'
-                        else:
-                            repl = f'<label><input type="radio" name="{slug_q}" value="no"> No</label> / <label><input type="radio" name="{slug_q}" value="yes"> Yes</label>'
-                    else:
-                        repl = replacement
-                else:
-                    if "/" in pattern:
-                        if "True" in pattern[:5]:
-                            repl = f'<label><input type="radio" name="{slug_q}" value="true"> True</label> / <label><input type="radio" name="{slug_q}" value="false"> False</label>'
-                        else:
-                            repl = f'<label><input type="radio" name="{slug_q}" value="false"> False</label> / <label><input type="radio" name="{slug_q}" value="true"> True</label>'
-                    else:
-                        repl = replacement
-                
-                html_content = html_content[:match.start()] + repl + html_content[match.end():]
-        
+        # Use a one-element list so the nested function can mutate the counter.
+        counter = [1]
+
+        # Matches the option text inside a checkbox list item: [ ] some text
+        CHECKBOX_RE = re.compile(r'^\s*\[\s*\]\s*(.+?)\s*$', re.DOTALL)
+
+        def clean_li(raw: str) -> str:
+            """Strip trailing <br /> tags that the nl2br extension may inject."""
+            return re.sub(r'\s*<br\s*/?>\s*$', '', raw).strip()
+
+        def replace_ul(m: re.Match) -> str:
+            inner = m.group(1)
+            # Collect the text content of every <li> in this list.
+            items_raw = re.findall(r'<li>(.*?)</li>', inner, re.DOTALL)
+            items = [clean_li(r) for r in items_raw]
+
+            # Only convert lists where EVERY item is a checkbox option.
+            if not items or not all(CHECKBOX_RE.match(t) for t in items):
+                return m.group(0)
+
+            qname = f"{slug}-q{counter[0]}"
+            counter[0] += 1
+
+            radios = ''.join(
+                f'<label>'
+                f'<input type="radio" name="{qname}"'
+                f' value="{self.slugify(CHECKBOX_RE.match(t).group(1))}">'
+                f' {CHECKBOX_RE.match(t).group(1)}'
+                f'</label>'
+                for t in items
+            )
+            return f'<div class="radio-group" style="margin-left:1.5em;margin-top:6px;">{radios}</div>'
+
+        html_content = re.sub(
+            r'<ul>(.*?)</ul>',
+            replace_ul,
+            html_content,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+
+        # Merge each detached radio group back inside the <li> it belongs to.
+        # Pattern produced by markdown when a numbered item and its option list
+        # are separated by a blank line:
+        #   <ol[...]><li>Question</li></ol> <div class="radio-group">...</div>
+        # becomes:
+        #   <div class="question-item"><ol[...]><li>Question<div ...></div></li></ol></div>
+        html_content = re.sub(
+            r'(<ol[^>]*>\s*<li>)(.*?)(</li>\s*</ol>)\s*(<div class="radio-group"[^>]*>.*?</div>)',
+            lambda m: (
+                f'<div class="question-item">'
+                f'{m.group(1)}{m.group(2)}{m.group(4)}{m.group(3)}'
+                f'</div>'
+            ),
+            html_content,
+            flags=re.DOTALL,
+        )
+
         return html_content
     
     def slugify(self, text: str) -> str:

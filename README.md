@@ -55,7 +55,7 @@ How to Evaluate & Examples:
 <!---- [TODO]  CONTENT GOES BELOW ------->
 1. Azure Developer CLI (azd): https://aka.ms/azd-install
 1. Azure CLI: https://aka.ms/azcli-install  
-1. dotnet 8 SDK: https://dotnet.microsoft.com/en-us/download/dotnet/8.0
+1. dotnet 10 SDK: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
 1. PowerShell 7.4 or higher: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-7.4
 1. Python (only for challenges-util scripts): https://www.python.org/downloads/
 1. Have an Azure subscription

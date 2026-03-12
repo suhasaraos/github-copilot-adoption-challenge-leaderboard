@@ -2,7 +2,7 @@
 
 ## Running Locally (No Docker)
 
-The application now runs using the built-in .NET 8 runtime on Azure App Service. For local development you can simply use the .NET CLI:
+The application now runs using the built-in .NET 10 runtime on Azure App Service. For local development you can simply use the .NET CLI:
 
 ```powershell
 cd src/LeaderboardApp

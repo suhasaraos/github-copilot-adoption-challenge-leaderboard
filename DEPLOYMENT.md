@@ -92,7 +92,7 @@ The deployment now automates SQL permission setup for the App Service managed id
    ```
 
    The script:
-   - Authenticates (if needed) and records your Azure AD object ID & UPN
+   - Authenticates (if needed) and records your Microsoft Entra ID object ID & UPN
    - Detects your current public IPv4 address and keeps it on the SQL firewall
    - Requests an Azure SQL access token for your account (valid for ~60 minutes) and stores it for the next deployment
 
@@ -296,7 +296,7 @@ The full script includes challenges across multiple categories:
 8. **Documentation** - README booster, Generate documentation
 9. **Testing** - Slash /tests command
 10. **Specialized** - Copilot for SQL, Internationalization, Performance profiling
-11. **Enterprise Features** - Enterprise policy testing, Context augmented agent, Custom chat modes
+11. **Enterprise Features** - Enterprise policy testing, Context augmented agent, Custom agents
 
 #### Adding Sample Challenges
 
@@ -356,9 +356,9 @@ INSERT INTO [dbo].[Challenges] (Title, Content, PostedDate, ActivityId) VALUES
 
 ---
 
-### Configure Azure AD Authentication (Required)
+### Configure Microsoft Entra ID Authentication (Required)
 
-After configuring SQL permissions, you must set up Azure AD authentication to enable user sign-in for the application.  __This step is already completed by app-reg-setup.ps1 as part of the README quick start.__
+After configuring SQL permissions, you must set up Microsoft Entra ID authentication to enable user sign-in for the application.  __This step is already completed by app-reg-setup.ps1 as part of the README quick start.__
 
 > **⚠️ Important:** The application uses Microsoft Entra ID (Azure AD) for authentication. You must register an App Registration and configure the App Service with the ClientId, TenantId, and ClientSecret.
 
@@ -386,7 +386,7 @@ After configuring SQL permissions, you must set up Azure AD authentication to en
    - ☑ **ID tokens** (used for implicit and hybrid flows)
 5. Click **Save** at the top
 
-> **Note:** These token settings enable the application to receive tokens from Azure AD during the authentication flow.
+> **Note:** These token settings enable the application to receive tokens from Microsoft Entra ID during the authentication flow.
 
 #### Step 3: Create a Client Secret
 
@@ -439,12 +439,12 @@ Now add these values to your App Service via Azure Portal:
 1. Wait ~1 minute for the App Service to restart
 2. Navigate to your app URL: `https://<your-app-service-name>.azurewebsites.net`
 3. You should be redirected to the Microsoft sign-in page
-4. Sign in with your Azure AD credentials
+4. Sign in with your Microsoft Entra ID credentials
 5. You should be redirected back to the app after successful authentication
 
 ---
 
-#### Troubleshooting Azure AD Configuration
+#### Troubleshooting Microsoft Entra ID Configuration
 
 **"IDW10106: The 'ClientId' option must be provided"**
 - Ensure you added the `AzureAd__ClientId` environment variable
@@ -465,7 +465,7 @@ Now add these values to your App Service via Azure Portal:
 - Update the `AzureAd__ClientSecret` environment variable in App Service
 
 **"User cannot sign in"**
-- Verify the user account exists in your Azure AD tenant
+- Verify the user account exists in your Microsoft Entra ID tenant
 - Check App Registration → **API permissions** for any required permissions
 
 ---
@@ -606,7 +606,7 @@ AzureAd__ClientSecret = @Microsoft.KeyVault(SecretUri=https://mykeyvault.vault.a
 - ✅ Audit logging via Key Vault
 - ✅ Access control via Azure RBAC
 
-**Best Practice for Azure AD Client Secret:**
+**Best Practice for Microsoft Entra ID Client Secret:**
 
 Instead of setting the client secret directly:
 ```bash
@@ -641,7 +641,7 @@ AzureAd__ClientSecret = @Microsoft.KeyVault(SecretUri=https://<keyvault-name>.va
 - **Passwordless SQL Access**: App Service uses its managed identity to connect to SQL Server
 - **No Credential Storage**: No passwords stored in configuration or Key Vault
 - **Automatic Credential Rotation**: Azure handles all credential management
-- **Entra ID Integration**: SQL Server uses Azure AD authentication
+- **Entra ID Integration**: SQL Server uses Microsoft Entra ID authentication
 - **Manual Admin Setup**: Set yourself as Entra ID admin via Azure Portal to grant permissions
 
 ### Network Security
@@ -784,7 +784,7 @@ az webapp log download --name <app-service-name> --resource-group <resource-grou
 **What to look for in logs:**
 
 - **Database connection errors**: Look for messages containing "DB Init failed", "Connection was denied", or "Login failed"
-- **Azure AD errors**: Look for "IDW10106", "ClientId", or authentication-related errors
+- **Microsoft Entra ID errors**: Look for "IDW10106", "ClientId", or authentication-related errors
 - **Startup errors**: Check the first few lines after app restart for configuration issues
 - **Application exceptions**: Stack traces and error messages from your .NET application
 

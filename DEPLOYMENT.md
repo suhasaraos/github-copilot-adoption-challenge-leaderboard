@@ -296,7 +296,7 @@ The full script includes challenges across multiple categories:
 8. **Documentation** - README booster, Generate documentation
 9. **Testing** - Slash /tests command
 10. **Specialized** - Copilot for SQL, Internationalization, Performance profiling
-11. **Enterprise Features** - Enterprise policy testing, Context augmented agent, Custom chat modes
+11. **Enterprise Features** - Enterprise policy testing, Context augmented agent, Custom agents
 
 #### Adding Sample Challenges
 

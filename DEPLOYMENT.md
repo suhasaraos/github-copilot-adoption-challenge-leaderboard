@@ -439,7 +439,7 @@ Now add these values to your App Service via Azure Portal:
 1. Wait ~1 minute for the App Service to restart
 2. Navigate to your app URL: `https://<your-app-service-name>.azurewebsites.net`
 3. You should be redirected to the Microsoft sign-in page
-4. Sign in with your Azure AD credentials
+4. Sign in with your Microsoft Entra ID credentials
 5. You should be redirected back to the app after successful authentication
 
 ---

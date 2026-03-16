@@ -32,7 +32,7 @@ A simplified architecture consists of:
 
 ### 2. Azure SQL Database
 - Port 1433 (private endpoint recommended).
-- Azure AD authentication using App Service managed identity (roles: `db_ddladmin`, `db_datareader`, `db_datawriter`).
+- Microsoft Entra ID authentication using App Service managed identity (roles: `db_ddladmin`, `db_datareader`, `db_datawriter`).
 - Private endpoint inside same Virtual Network for restricted access.
 
 #### Granting Database Roles to Managed Identity

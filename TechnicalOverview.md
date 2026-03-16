@@ -36,7 +36,7 @@ A simplified architecture consists of:
 - Private endpoint inside same Virtual Network for restricted access.
 
 #### Granting Database Roles to Managed Identity
-Run as an Azure AD admin on the target database (replace `<identity-name>` with the managed identity name – typically the App Service name):
+Run as a Microsoft Entra ID admin on the target database (replace `<identity-name>` with the managed identity name – typically the App Service name):
 ```sql
 CREATE USER [<identity-name>] FROM EXTERNAL PROVIDER;
 ALTER ROLE db_datareader ADD MEMBER [<identity-name>];

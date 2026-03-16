@@ -444,7 +444,7 @@ Now add these values to your App Service via Azure Portal:
 
 ---
 
-#### Troubleshooting Azure AD Configuration
+#### Troubleshooting Microsoft Entra ID Configuration
 
 **"IDW10106: The 'ClientId' option must be provided"**
 - Ensure you added the `AzureAd__ClientId` environment variable

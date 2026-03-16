@@ -606,7 +606,7 @@ AzureAd__ClientSecret = @Microsoft.KeyVault(SecretUri=https://mykeyvault.vault.a
 - ✅ Audit logging via Key Vault
 - ✅ Access control via Azure RBAC
 
-**Best Practice for Azure AD Client Secret:**
+**Best Practice for Microsoft Entra ID Client Secret:**
 
 Instead of setting the client secret directly:
 ```bash

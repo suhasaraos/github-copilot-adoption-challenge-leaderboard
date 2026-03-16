@@ -465,7 +465,7 @@ Now add these values to your App Service via Azure Portal:
 - Update the `AzureAd__ClientSecret` environment variable in App Service
 
 **"User cannot sign in"**
-- Verify the user account exists in your Azure AD tenant
+- Verify the user account exists in your Microsoft Entra ID tenant
 - Check App Registration → **API permissions** for any required permissions
 
 ---

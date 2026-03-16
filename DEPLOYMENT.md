@@ -92,7 +92,7 @@ The deployment now automates SQL permission setup for the App Service managed id
    ```
 
    The script:
-   - Authenticates (if needed) and records your Azure AD object ID & UPN
+   - Authenticates (if needed) and records your Microsoft Entra ID object ID & UPN
    - Detects your current public IPv4 address and keeps it on the SQL firewall
    - Requests an Azure SQL access token for your account (valid for ~60 minutes) and stores it for the next deployment
 

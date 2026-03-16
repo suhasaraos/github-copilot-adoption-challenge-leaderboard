@@ -47,7 +47,7 @@ GO
 Reference: Tutorial for managed identity & SQL: https://learn.microsoft.com/en-us/azure/app-service/tutorial-connect-msi-sql-database?tabs=windowsclient%2Cefcore#grant-database-admin-access-to-a-microsoft-entra-user
 
 ### 3. Azure Key Vault
-- Store: GitHub PATs, SMTP password, Azure AD (client secret if used), any other secrets.
+- Store: GitHub PATs, SMTP password, Microsoft Entra ID (client secret if used), any other secrets.
 - Grant App Service Managed Identity: **Key Vault Secrets User** role / access policy.
 - Use Key Vault references in App Service configuration, e.g.:  
   `@Microsoft.KeyVault(SecretUri=https://devbox-akv.vault.azure.net/secrets/GitHub-PAT/)`

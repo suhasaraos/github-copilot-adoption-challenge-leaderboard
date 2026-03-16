@@ -89,6 +89,6 @@ info: Microsoft.Hosting.Lifetime[14]
 | File | Purpose |
 |------|---------|
 | `src/app/appsettings.json` | Base configuration (empty connection strings, feature flags) |
-| `src/app/appsettings.Development.json` | Local dev overrides - Azure AD, SQL connection string |
+| `src/app/appsettings.Development.json` | Local dev overrides - Microsoft Entra ID, SQL connection string |
 
 The `ConnectionStrings.SqlServer` value in `appsettings.Development.json` uses `Authentication=Active Directory Default`, so the Azure CLI logged-in identity (or `DefaultAzureCredential`) is used - no password needed.

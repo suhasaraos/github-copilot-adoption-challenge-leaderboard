@@ -641,7 +641,7 @@ AzureAd__ClientSecret = @Microsoft.KeyVault(SecretUri=https://<keyvault-name>.va
 - **Passwordless SQL Access**: App Service uses its managed identity to connect to SQL Server
 - **No Credential Storage**: No passwords stored in configuration or Key Vault
 - **Automatic Credential Rotation**: Azure handles all credential management
-- **Entra ID Integration**: SQL Server uses Azure AD authentication
+- **Entra ID Integration**: SQL Server uses Microsoft Entra ID authentication
 - **Manual Admin Setup**: Set yourself as Entra ID admin via Azure Portal to grant permissions
 
 ### Network Security

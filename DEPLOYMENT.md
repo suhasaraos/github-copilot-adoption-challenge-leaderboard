@@ -386,7 +386,7 @@ After configuring SQL permissions, you must set up Azure AD authentication to en
    - ☑ **ID tokens** (used for implicit and hybrid flows)
 5. Click **Save** at the top
 
-> **Note:** These token settings enable the application to receive tokens from Azure AD during the authentication flow.
+> **Note:** These token settings enable the application to receive tokens from Microsoft Entra ID during the authentication flow.
 
 #### Step 3: Create a Client Secret
 

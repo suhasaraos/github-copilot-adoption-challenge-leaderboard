@@ -784,7 +784,7 @@ az webapp log download --name <app-service-name> --resource-group <resource-grou
 **What to look for in logs:**
 
 - **Database connection errors**: Look for messages containing "DB Init failed", "Connection was denied", or "Login failed"
-- **Azure AD errors**: Look for "IDW10106", "ClientId", or authentication-related errors
+- **Microsoft Entra ID errors**: Look for "IDW10106", "ClientId", or authentication-related errors
 - **Startup errors**: Check the first few lines after app restart for configuration issues
 - **Application exceptions**: Stack traces and error messages from your .NET application
 

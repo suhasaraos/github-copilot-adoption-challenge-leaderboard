@@ -356,7 +356,7 @@ INSERT INTO [dbo].[Challenges] (Title, Content, PostedDate, ActivityId) VALUES
 
 ---
 
-### Configure Azure AD Authentication (Required)
+### Configure Microsoft Entra ID Authentication (Required)
 
 After configuring SQL permissions, you must set up Azure AD authentication to enable user sign-in for the application.  __This step is already completed by app-reg-setup.ps1 as part of the README quick start.__
 

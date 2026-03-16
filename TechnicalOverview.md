@@ -6,7 +6,7 @@ A simplified architecture consists of:
 1. Azure App Service (Web App) hosting the .NET 8 application.
 2. Azure SQL Database for persistence (participant, team, score, metrics, and announcement data).
 3. Azure Key Vault for secrets (GitHub PATs, SMTP credentials, client secrets if applicable).
-4. Azure AD (Entra ID) for authentication & authorization of users.
+4. Microsoft Entra ID for authentication & authorization of users.
 5. External APIs (GitHub, Microsoft Learn) queried over HTTPS.
 
 > NOTE: This is a monolith (no discrete microservices). Scaling is handled at the App Service plan level.
@@ -19,7 +19,7 @@ A simplified architecture consists of:
 1. In the Azure Portal, navigate to the App Service.
 2. Under Identity > System assigned, set Status = On and save.
 3. Note the principal ID (used implicitly when granting SQL roles & Key Vault access). No secrets are required for this identity.
-4. Grant this identity access to Key Vault (Secrets User) and Azure SQL (see T-SQL below) after the first connection attempt or pre-create the user via an Azure AD admin.
+4. Grant this identity access to Key Vault (Secrets User) and Azure SQL (see T-SQL below) after the first connection attempt or pre-create the user via a Microsoft Entra ID admin.
 
 ---
 ## Requirements
@@ -32,11 +32,11 @@ A simplified architecture consists of:
 
 ### 2. Azure SQL Database
 - Port 1433 (private endpoint recommended).
-- Azure AD authentication using App Service managed identity (roles: `db_ddladmin`, `db_datareader`, `db_datawriter`).
+- Microsoft Entra ID authentication using App Service managed identity (roles: `db_ddladmin`, `db_datareader`, `db_datawriter`).
 - Private endpoint inside same Virtual Network for restricted access.
 
 #### Granting Database Roles to Managed Identity
-Run as an Azure AD admin on the target database (replace `<identity-name>` with the managed identity name – typically the App Service name):
+Run as a Microsoft Entra ID admin on the target database (replace `<identity-name>` with the managed identity name – typically the App Service name):
 ```sql
 CREATE USER [<identity-name>] FROM EXTERNAL PROVIDER;
 ALTER ROLE db_datareader ADD MEMBER [<identity-name>];
@@ -47,7 +47,7 @@ GO
 Reference: Tutorial for managed identity & SQL: https://learn.microsoft.com/en-us/azure/app-service/tutorial-connect-msi-sql-database?tabs=windowsclient%2Cefcore#grant-database-admin-access-to-a-microsoft-entra-user
 
 ### 3. Azure Key Vault
-- Store: GitHub PATs, SMTP password, Azure AD (client secret if used), any other secrets.
+- Store: GitHub PATs, SMTP password, Microsoft Entra ID (client secret if used), any other secrets.
 - Grant App Service Managed Identity: **Key Vault Secrets User** role / access policy.
 - Use Key Vault references in App Service configuration, e.g.:  
   `@Microsoft.KeyVault(SecretUri=https://devbox-akv.vault.azure.net/secrets/GitHub-PAT/)`
@@ -132,7 +132,7 @@ Connection Strings (in App Service Connection Strings section):
 | `PostgreSQL` | `Host=<host>;Database=<db>;Username=<user>;Password=<password>` | PostgreSQL |
 | `SqlServer` | `Server=tcp:sqlserver.database.windows.net,1433;Database=leaderboard-db;Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Default;` | SQLAzure |
 
-### 3. Azure AD Settings (App Settings Keys)
+### 3. Microsoft Entra ID Settings (App Settings Keys)
 | Key | Example / Source |
 |-----|------------------|
 | `AzureAd__Domain` | `<yourtenant>.onmicrosoft.com` |

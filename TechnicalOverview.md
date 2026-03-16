@@ -19,7 +19,7 @@ A simplified architecture consists of:
 1. In the Azure Portal, navigate to the App Service.
 2. Under Identity > System assigned, set Status = On and save.
 3. Note the principal ID (used implicitly when granting SQL roles & Key Vault access). No secrets are required for this identity.
-4. Grant this identity access to Key Vault (Secrets User) and Azure SQL (see T-SQL below) after the first connection attempt or pre-create the user via an Azure AD admin.
+4. Grant this identity access to Key Vault (Secrets User) and Azure SQL (see T-SQL below) after the first connection attempt or pre-create the user via a Microsoft Entra ID admin.
 
 ---
 ## Requirements

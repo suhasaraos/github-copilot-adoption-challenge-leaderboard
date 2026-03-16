@@ -6,7 +6,7 @@ A simplified architecture consists of:
 1. Azure App Service (Web App) hosting the .NET 8 application.
 2. Azure SQL Database for persistence (participant, team, score, metrics, and announcement data).
 3. Azure Key Vault for secrets (GitHub PATs, SMTP credentials, client secrets if applicable).
-4. Azure AD (Entra ID) for authentication & authorization of users.
+4. Microsoft Entra ID for authentication & authorization of users.
 5. External APIs (GitHub, Microsoft Learn) queried over HTTPS.
 
 > NOTE: This is a monolith (no discrete microservices). Scaling is handled at the App Service plan level.

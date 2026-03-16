@@ -132,7 +132,7 @@ Connection Strings (in App Service Connection Strings section):
 | `PostgreSQL` | `Host=<host>;Database=<db>;Username=<user>;Password=<password>` | PostgreSQL |
 | `SqlServer` | `Server=tcp:sqlserver.database.windows.net,1433;Database=leaderboard-db;Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Default;` | SQLAzure |
 
-### 3. Azure AD Settings (App Settings Keys)
+### 3. Microsoft Entra ID Settings (App Settings Keys)
 | Key | Example / Source |
 |-----|------------------|
 | `AzureAd__Domain` | `<yourtenant>.onmicrosoft.com` |

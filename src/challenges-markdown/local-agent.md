@@ -17,7 +17,7 @@ In this exercise you will explore the three built-in local agent modes in GitHub
 
 ### Before you start
 
-Ensure VS Code has the latest GitHub Copilot Chat extension. Enable agent mode in settings (`chat.agent.enabled`). Open a repository with enough code to make multi-file tasks meaningful.
+Ensure VS Code has the latest GitHub Copilot Chat extension. Agent mode is enabled by default in recent versions. Open a repository with enough code to make multi-file tasks meaningful.
 
 ### Steps
 

@@ -16,7 +16,7 @@ In this hands-on exercise you will delegate complex, multi-step tasks to **subag
 
 ### Before you start
 
-Ensure you are running VS Code with the latest GitHub Copilot Chat extension. Agent mode must be enabled in settings (`chat.agent.enabled`). Open a repository that contains multiple files or modules so the agent has enough complexity to benefit from delegation.
+Ensure you are running VS Code with the latest GitHub Copilot Chat extension. Agent mode is enabled by default in recent versions. Open a repository that contains multiple files or modules so the agent has enough complexity to benefit from delegation.
 
 ### Steps
 

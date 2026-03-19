@@ -19,7 +19,7 @@ This activity shows how to use **GitHub Copilot Explain** to create a human read
 
 ### Prerequisites
 
-Ensure you have a GitHub repository in **Github Enterprise** where you can open pull requests. Push at least one commit and create a new PR that modifies multiple lines so the diff is non trivial. Make sure Copilot Explain for pull requests is enabled under repository Settings > Copilot.
+Ensure you have a GitHub repository with **GitHub Copilot Enterprise** where you can open pull requests. Push at least one commit and create a new PR that modifies multiple lines so the diff is non trivial. Make sure Copilot Explain for pull requests is enabled under repository Settings > Copilot.
 
 ### Steps
 

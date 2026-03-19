@@ -16,7 +16,7 @@ In this exercise you will create a custom **agent skill** by writing a `SKILL.md
 
 ### Before you start
 
-Ensure you have VS Code with the latest GitHub Copilot Chat extension. Agent mode must be enabled (`chat.agent.enabled`). Have a repository where you can add files to the `.github/skills/` directory.
+Ensure you have VS Code with the latest GitHub Copilot Chat extension. Agent mode is enabled by default in recent versions (no settings change required). Have a repository where you can add files to the `.github/skills/` directory.
 
 ### Steps
 

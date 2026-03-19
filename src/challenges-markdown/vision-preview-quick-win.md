@@ -19,7 +19,7 @@ In this quick win you will use **GitHub Copilot Chat Vision (Preview feature) **
 
 ### Prerequisites
 
-**Copilot Chat Vision is currently in Preview and the preview features must be enabled in the Enterprise/Organization policy**. Verify you have the latest VS Code and Copilot extension then enable the Vision feature in the extension settings. Make sure the diagram you want to use is already stored in your repository for example `docs/system-architecture.png`.
+Image (Vision) support in Copilot Chat is currently a VS Code preview feature. Enable it under **Settings > GitHub Copilot > Chat: Image Attachments (Preview)**. Verify you have the latest VS Code and GitHub Copilot extension installed. Make sure the diagram you want to use is already stored in your repository for example `docs/system-architecture.png`.
 
 ### Steps
 

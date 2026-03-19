@@ -19,7 +19,7 @@ In this multimodal bug hunt you will capture a screenshot of a visual bug in you
 
 ### Before you start
 
-Install the latest **GitHub Copilot Nightly** extension in VS Code and enable both Agent mode and Vision Preview under **Settings > GitHub Copilot**. Ensure your repository contains the Figma design export for the affected screen for example `design/login-page.png`. Start your development server with `npm start` `yarn dev` or similar so you can reproduce the bug.
+Install the latest **GitHub Copilot** extension in VS Code and ensure Agent mode is enabled in Copilot Chat. Image (Vision) support in Copilot Chat is currently a VS Code preview feature — enable it under **Settings > GitHub Copilot > Chat: Image Attachments (Preview)**. Ensure your repository contains the Figma design export for the affected screen for example `design/login-page.png`. Start your development server with `npm start` `yarn dev` or similar so you can reproduce the bug.
 
 ### Steps
 

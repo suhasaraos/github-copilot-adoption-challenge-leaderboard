@@ -5,7 +5,7 @@ ActivityId: 12
 
 ### Summary
 
-In this challenge, you’ll enable GitHub Copilot’s **Review changes** feature to provide AI-generated suggestions on your pull requests. After configuring your repository to use Copilot for reviews, you’ll open a pull request and see Copilot’s inline review comments in action. This activity takes about fifteen minutes. Note that some of the features in this challenge requires **GitHub Enterpise.**
+In this challenge, you'll enable GitHub Copilot's **Review changes** feature to provide AI-generated suggestions on your pull requests. After configuring your repository to use Copilot for reviews, you'll open a pull request and see Copilot's inline review comments in action. This activity takes about fifteen minutes. Note that some of the features in this challenge requires **GitHub Copilot Enterprise.**
 
 ### What you will learn
 

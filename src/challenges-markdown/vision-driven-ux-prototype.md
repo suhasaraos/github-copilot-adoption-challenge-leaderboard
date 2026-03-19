@@ -19,7 +19,7 @@ In this rapid prototyping exercise, you will upload a photo of a hand-drawn or e
 
 ### Before you start
 
-**Copilot Chat Vision is currently in Preview and the preview features must be enabled in the Enterprise/Organization policy**. Place a photo or scan of your wireframe in the repository for example `docs/wireframe.jpg`.
+Image (Vision) support in Copilot Chat is currently a VS Code preview feature. Enable it under **Settings > GitHub Copilot > Chat: Image Attachments (Preview)**. If your organisation policy restricts preview features, confirm with your administrator that image attachments are permitted. Place a photo or scan of your wireframe in the repository for example `docs/wireframe.jpg`.
 
 ### Steps
 

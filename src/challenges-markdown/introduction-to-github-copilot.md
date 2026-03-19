@@ -5,7 +5,7 @@ ActivityId: 10
 
 ### Summary
 
-GitHub Copilot uses OpenAI Codex to suggest code and entire functions in real time, right from your editor.
+GitHub Copilot uses a combination of AI models to suggest code and entire functions in real time, right from your editor.
 
 ### Learning Objectives
 
@@ -13,7 +13,7 @@ In this module, you will:
 
 - Learn how GitHub Copilot can help you code by offering autocomplete-style suggestions.
 - Learn about the various ways to trigger GitHub Copilot.
-- Learn about the differences among GitHub Copilot Individual, Business, and Enterprise.
+- Learn about the differences among GitHub Copilot Free, Pro, Business, and Enterprise.
 - Learn how to configure GitHub Copilot.
 - Troubleshoot GitHub Copilot.
 

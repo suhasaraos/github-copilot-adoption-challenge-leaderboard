@@ -19,7 +19,7 @@ In this advanced exercise you will fork your organisation’s local **Model-Cont
 
 ### Before you start
 
-Install the latest **GitHub Copilot Nightly** extension in VS Code and enable Agent mode under **Settings > GitHub Copilot > Agents**. Make sure you have: 1. An organisation repo named `mcp-server` (or similar) you can fork. 2. A Jira cloud instance and a personal API token. 3. `node` or `python` (match the server’s language) installed locally.
+Install the latest **GitHub Copilot** extension in VS Code (enable the Pre-Release channel for the newest features). Ensure Agent mode is active in Copilot Chat. Make sure you have: 1. An organisation repo named `mcp-server` (or similar) you can fork. 2. A Jira cloud instance and a personal API token. 3. `node` or `python` (match the server's language) installed locally.
 
 ### Steps
 
@@ -31,7 +31,20 @@ Install the latest **GitHub Copilot Nightly** extension in VS Code and enable Ag
 
 - **Step 4.** Start the MCP server locally with `npm start` or `python main.py`. Verify `http://localhost:4891/health` returns `{"status":"ok"}`.
 
-- **Step 5.** In VS Code go to **Settings > GitHub Copilot > MCP Endpoint** and set the endpoint to `http://localhost:4891`. Reload the window.
+- **Step 5.** In VS Code, open (or create) `.vscode/mcp.json` and register the server:
+
+```json
+{
+  "servers": {
+    "jira-mcp": {
+      "type": "http",
+      "url": "http://localhost:4891"
+    }
+  }
+}
+```
+
+Save the file and reload the VS Code window (`Developer: Reload Window` from the Command Palette).
 
 - **Step 6.** Open any file and switch to Copilot Agent mode. Type `Create a Jira bug: User cannot reset password` and press Enter.
 

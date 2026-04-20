@@ -1,0 +1,318 @@
+================================================================================
+  GITHUB COPILOT ADOPTION CHALLENGE - DELIVERY RUNBOOK
+================================================================================
+
+This runbook provides a step-by-step timeline for delivering the GitHub Copilot
+Adoption Challenge to a customer. It covers all phases from initial engagement
+through post-challenge wrap-up, referencing the available assets from the
+GHCP - Artifacts SharePoint library and the leaderboard application codebase.
+
+NOTE: Kubernetes deployment is NOT currently supported. App Service is the only
+supported deployment target. Kubernetes support is planned for a future release.
+
+================================================================================
+  AVAILABLE ASSETS (SharePoint: GHCP - Artifacts)
+================================================================================
+
+  Documents & Templates:
+  - GitHub Copilot Adoption Challenge - Leaders Email Template.docx
+  - GitHub Copilot Adoption Challenge - Excitement Email Template.docx
+  - GitHub Copilot Adoption Challenge - Registration Email Template.docx
+  - GitHub Copilot Adoption Challenge - T-7 Days Email Template.docx
+  - GitHub Copilot Adoption Challenge - Datasheet.docx
+  - GitHub Copilot Adoption Challenge FAQ.docx
+  - GitHub Copilot Copilot Challenge Task Roadmap.docx
+  - GitHub Copilot Adoption Challenge.pdf
+  - GitHub Copilot Adoption Challenge.pptx
+
+  Technical Documents:
+  - GitHub Copilot Adoption Challenge - Technical Document App Service.docx
+  - GitHub Copilot Adoption Challenge - Technical Document Kubernetes.docx (FUTURE)
+
+  Architecture Diagrams:
+  - arch-diag-app-service.vsdx
+  - arch-diag-kubernetes.vsdx (FUTURE)
+
+  Videos:
+  - registration-guide.mp4
+  - registration-guide-v2.mp4
+  - registration-guide-v3.mp4
+  - registration-guide-v3-org-select.mp4
+
+  Presentations:
+  - CSU GH Copilot Adoption Factory.pptx
+
+  Codebase (this repo):
+  - Leaderboard App (.NET 10, Azure App Service, Azure SQL)
+  - 55+ challenge markdown files (src/challenges-markdown/)
+  - Automated deployment via Azure Developer CLI (azd)
+  - Seed scripts for database, app registration, and challenges
+
+================================================================================
+  PHASE 1: INITIAL ENGAGEMENT (T-30 to T-21 days before challenge)
+================================================================================
+
+Target: Get leadership buy-in and secure commitment.
+
+[ ] DAY T-30 | LEADERSHIP OUTREACH
+    - Send the "Leaders Email Template" to the customer's engineering leader(s)
+      Asset: GitHub Copilot Adoption Challenge - Leaders Email Template.docx
+    - Attach the Datasheet for a quick overview of the program
+      Asset: GitHub Copilot Adoption Challenge - Datasheet.docx
+    - Optionally attach the overview PDF or presentation for more detail
+      Asset: GitHub Copilot Adoption Challenge.pdf
+      Asset: GitHub Copilot Adoption Challenge.pptx
+
+[ ] DAY T-28 | LEADERSHIP MEETING
+    - Schedule a 30-min call with the customer's leader(s)
+    - Walk through the challenge overview presentation
+      Asset: CSU GH Copilot Adoption Factory.pptx
+      Asset: GitHub Copilot Adoption Challenge.pptx
+    - Review the FAQ for common questions
+      Asset: GitHub Copilot Adoption Challenge FAQ.docx
+    - Discuss timeline, team sizes, and success criteria
+    - Confirm challenge dates and participant count
+    - Confirm GitHub Copilot licensing is in place for all participants
+    - Agree on challenge duration (typically 2-4 weeks)
+
+[ ] DAY T-25 | CONFIRM PREREQUISITES
+    - Verify the customer has:
+      * GitHub Copilot enabled at the organization level
+      * An Azure subscription for leaderboard deployment
+      * Microsoft Entra ID tenant for authentication
+      * GitHub PAT with required scopes (admin:org, copilot)
+    - Review the Task Roadmap with the customer
+      Asset: GitHub Copilot Challenge Task Roadmap.docx
+    - Share the Technical Document (App Service) with the customer's IT/DevOps
+      Asset: GitHub Copilot Adoption Challenge - Technical Document App Service.docx
+      NOTE: Do NOT share the Kubernetes doc - it is not yet supported.
+
+================================================================================
+  PHASE 2: ENVIRONMENT SETUP (T-21 to T-14 days before challenge)
+================================================================================
+
+Target: Deploy the leaderboard app and configure the environment.
+
+[ ] DAY T-21 | DEPLOY LEADERBOARD APPLICATION
+    - Clone the leaderboard repository
+    - Ensure prerequisites are installed:
+      * Azure Developer CLI (azd)
+      * Azure CLI (az)
+      * .NET 10 SDK
+      * PowerShell 7.4+
+    - Run the automated deployment:
+
+      pwsh ./setup-azd.ps1 -TenantId <tenant-id> \
+        -SubscriptionId <subscription-id> \
+        -Location <azure-region> \
+        -EnvironmentName <env-name>
+      azd up
+      pwsh ./src/infra/scripts/grant-sql-managed-identity-roles.ps1
+      pwsh ./src/infra/scripts/seed-database.ps1
+      pwsh ./src/infra/scripts/app-reg-setup.ps1 \
+        -passwordDaysToExpiration <days>
+
+    - Verify deployment:
+      azd env get-value APP_SERVICE_HOST
+    - Confirm the app loads and authentication works
+    - Reference: README.md, DEPLOYMENT.md, TechnicalOverview.md
+
+[ ] DAY T-20 | CONFIGURE CHALLENGES
+    - Review all 55+ challenge markdown files in src/challenges-markdown/
+    - Remove challenges for features NOT available in the customer's environment
+    - Pay special attention to:
+      * Enterprise-only features (Vision, Workspace, Knowledge Base)
+      * CLI features (verify gh copilot is available)
+      * MCP Tools / Agent features (newer capabilities)
+    - Generate and load challenge SQL inserts:
+
+      python3 -m venv ghcp
+      source ghcp/bin/activate  (or .\ghcp\Scripts\Activate on Windows)
+      pip install markdown
+      python ./src/challenges-util/generate_sql_inserts.py
+
+    - Or run the bulk insert:
+      pwsh ./src/infra/scripts/run-challenges-insert.ps1
+    - Verify challenges appear correctly in the leaderboard app
+
+[ ] DAY T-19 | CONFIGURE GITHUB INTEGRATION
+    - If using connected mode (recommended):
+      * Store the GitHub PAT in Azure Key Vault
+      * Set GitHubSettings__Enabled = true
+      * Configure the GitHub org name
+      * Verify Copilot metrics are flowing
+    - If using disconnected mode:
+      * Set GitHubSettings__Enabled = false
+      * Plan for manual challenge validation by admins
+
+[ ] DAY T-18 | CONFIGURE SCORING WEIGHTS
+    - Review default activity weights with the customer
+    - Adjust weights if needed (e.g., emphasize certification):
+      * ActiveUsersPerDay: 50 pts (multiplier)
+      * EngagedUsersPerDay: 75 pts (multiplier)
+      * TotalChats: 10 pts (multiplier)
+      * CompletedLearningModule: 250 pts (fixed)
+      * GitHubCopilotCertificationExam: 1000 pts (fixed)
+      * CopilotDailyChallengeCompleted: 200 pts (fixed)
+    - See DEPLOYMENT.md for full weight table and customization tips
+
+[ ] DAY T-17 | SMOKE TEST
+    - Create a test team and test participant
+    - Complete a sample challenge end-to-end
+    - Verify scoring updates on the leaderboard
+    - Test authentication flow for a non-admin user
+    - Confirm email/SMTP works if configured
+    - Document the leaderboard URL for distribution
+
+================================================================================
+  PHASE 3: CUSTOMER COMMUNICATION (T-14 to T-7 days before challenge)
+================================================================================
+
+Target: Build excitement and get participants registered.
+
+[ ] DAY T-14 | EXCITEMENT EMAIL
+    - Customer's leader sends the Excitement Email to all potential participants
+      Asset: GitHub Copilot Adoption Challenge - Excitement Email Template.docx
+    - This email should:
+      * Announce the upcoming challenge
+      * Build enthusiasm about GitHub Copilot
+      * Hint at prizes/recognition
+      * Mention approximate dates
+
+[ ] DAY T-10 | REGISTRATION EMAIL
+    - Send the Registration Email to all participants
+      Asset: GitHub Copilot Adoption Challenge - Registration Email Template.docx
+    - Include or attach the registration guide video so participants can
+      self-serve team creation and registration
+      Asset: registration-guide-v3.mp4 (latest version recommended)
+      Asset: registration-guide-v3-org-select.mp4 (if org selection is needed)
+    - Include the leaderboard URL
+    - Include team formation instructions (max participants per team is
+      configurable via ChallengeSettings__MaxParticipantsPerTeam, default: 8)
+    - Set a registration deadline (suggest T-3 days before challenge start)
+
+[ ] DAY T-7 | T-7 DAYS REMINDER EMAIL
+    - Send the T-7 Days Email to all registered participants
+      Asset: GitHub Copilot Adoption Challenge - T-7 Days Email Template.docx
+    - Remind participants to:
+      * Complete registration if they haven't
+      * Install required tools (VS Code, GitHub Copilot extension, CLI)
+      * Join their team on the leaderboard
+      * Review the first few challenges
+    - Share the FAQ document for self-service answers
+      Asset: GitHub Copilot Adoption Challenge FAQ.docx
+
+[ ] DAY T-3 | FINAL PREP
+    - Confirm all teams are registered in the leaderboard
+    - Verify participant count matches expectations
+    - Do a final smoke test of the leaderboard
+    - Prepare the "Day 1" announcement message
+    - Confirm challenge start date is set in app config:
+      ChallengeSettings__ChallengeStartDate = <start-date>
+      ChallengeSettings__ChallengeStarted = true (on launch day)
+
+================================================================================
+  PHASE 4: CHALLENGE EXECUTION (Day 1 through Day N)
+================================================================================
+
+Target: Run the challenge, keep engagement high, and support participants.
+
+[ ] DAY 1 | LAUNCH
+    - Set ChallengeSettings__ChallengeStarted = true in App Service config
+    - Send a "Challenge is LIVE!" announcement to all participants
+    - Publish the first day's challenge(s)
+    - Monitor the leaderboard for initial activity
+    - Be available for support questions
+
+[ ] DAILY | ONGOING ACTIVITIES
+    - Monitor leaderboard scores and engagement
+    - Publish new daily challenges as scheduled
+    - If in connected mode, verify GitHub metrics are syncing
+    - If in disconnected mode, review and approve submitted challenges
+    - Share daily or periodic leaderboard snapshots to maintain excitement
+    - Address any technical issues (auth, scoring, missing metrics)
+
+[ ] MID-CHALLENGE | HALFWAY CHECK-IN
+    - Share a mid-challenge leaderboard update
+    - Highlight top teams and individuals
+    - Remind participants of remaining challenges
+    - Encourage teams that are behind
+    - Adjust scoring weights if needed based on engagement patterns
+
+================================================================================
+  PHASE 5: WRAP-UP (Day N+1 to Day N+7)
+================================================================================
+
+Target: Close the challenge, celebrate results, and capture learnings.
+
+[ ] DAY N+1 | CHALLENGE ENDS
+    - Set ChallengeSettings__ChallengeStarted = false
+    - Take a final leaderboard snapshot
+    - Announce the winning team(s) and top individual(s)
+
+[ ] DAY N+3 | RESULTS & RECOGNITION
+    - Prepare a results summary for leadership
+    - Share final scores and highlights with all participants
+    - Coordinate prizes/recognition with the customer's leader
+    - Collect participant feedback (survey recommended)
+
+[ ] DAY N+7 | RETROSPECTIVE & HANDOFF
+    - Hold a retrospective meeting with the customer's leader
+    - Review:
+      * Overall participation rates
+      * Copilot adoption metrics (if connected mode was used)
+      * Most/least popular challenges
+      * Feedback themes
+    - Discuss next steps for sustained Copilot adoption
+    - Decide on leaderboard app retention or teardown:
+      * To tear down: azd down
+      * To retain: review Azure costs and consider scaling down
+
+================================================================================
+  TROUBLESHOOTING QUICK REFERENCE
+================================================================================
+
+  Issue: "Deny Public Network Access" or "DB Init failed"
+  Fix:   Re-run SQL permission scripts, ensure managed identity has
+         db_datareader, db_datawriter, db_ddladmin roles. Restart App Service.
+
+  Issue: Authentication not working
+  Fix:   Verify App Registration redirect URI matches the App Service URL
+         (https://<app-name>.azurewebsites.net/signin-oidc). Check ClientId,
+         TenantId, and ClientSecret in App Service config.
+
+  Issue: GitHub metrics not flowing
+  Fix:   Verify GitHubSettings__Enabled = true, PAT is valid and authorized
+         for the org, and PAT is stored in Key Vault with correct reference.
+
+  Issue: Challenges not appearing
+  Fix:   Run the challenge insert script or verify SQL inserts completed.
+         Check that challenges are linked to valid ActivityId values.
+
+  Issue: Scoring not updating
+  Fix:   Verify Activities table is seeded (14 rows expected). Check that
+         GitHub integration is enabled if using multiplier-based scoring.
+
+================================================================================
+  IMPORTANT NOTES
+================================================================================
+
+  * DEPLOYMENT: Only Azure App Service is supported. Kubernetes is planned
+    for a future release. Do not use arch-diag-kubernetes.vsdx or the
+    Technical Document Kubernetes.docx at this time.
+
+  * SECURITY: Never commit GitHub PATs or client secrets to source control.
+    Always use Azure Key Vault references.
+
+  * AUTHENTICATION: Only single-tenant Microsoft Entra ID is supported.
+    Only a single GitHub organization is supported per deployment.
+
+  * SCALING: The app is a monolith. Scale via the App Service Plan
+    (vertical or horizontal) as participant count grows.
+
+  * VIDEO ASSETS: Use the latest registration guide video (v3) when sharing
+    with customers. Older versions may show outdated UI.
+
+================================================================================
+  END OF RUNBOOK
+================================================================================

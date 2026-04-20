@@ -23,7 +23,7 @@ The app is structured to provide real-time updates to the leaderboard, ensuring 
 
 ## Privacy and Security
 
-📋 **[Security and Privacy Statement](./PRIVACY-STATEMENT.md)** - Please review the official Microsoft security and privacy statement before deploying this application.
+📋 **[Security and Privacy Statement](./PRIVACY-STATEMENT.md)** - Please review the security and privacy considerations before deploying this application.
 
 -----------------------------------------------------------------
 

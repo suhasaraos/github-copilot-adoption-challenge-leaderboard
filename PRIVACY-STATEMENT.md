@@ -17,7 +17,7 @@ The app is intended solely for non-production use, with a limited lifetime tied 
 
 ## Personally Identifiable Information (PII)
 
-The app processes only the information required for leaderboard functionality (e.g., participant names, team assignments) as entered by users. No additional PII is collected by the app and no data is stored by Microsoft since it is deployed into customer environment. Authentication and user profile details leverage Microsoft Entra ID (formerly Azure Active Directory) and remain within your environment.
+The app processes only the information required for leaderboard functionality—participant names, email addresses, GitHub handles, Microsoft Learn handles, and team assignments—as entered by users. No additional PII is collected by the app and no data is stored by Microsoft since it is deployed into the customer's environment. Authentication and user profile details leverage Microsoft Entra ID (formerly Azure Active Directory) and remain within your environment.
 
 ## Authentication & Secrets Management
 

@@ -119,7 +119,7 @@ Server=tcp:sqlserver.database.windows.net,1433;Database=leaderboard-db;Encrypt=T
 |-----|---------------|
 | `ChallengeSettings__MaxParticipantsPerTeam` | 8 |
 | `ChallengeSettings__ChallengeStarted` | false |
-| `ChallengeSettings__ChallengeStartDate` | 2025-10-04 |
+| `ChallengeSettings__ChallengeStartDate` | 2026-10-04 |
 
 ### 2. Database Configuration
 | Key | Value |

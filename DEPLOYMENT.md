@@ -579,7 +579,7 @@ These settings control challenge behavior and are pre-configured with defaults. 
 |---------|---------|-------------|
 | `ChallengeSettings__MaxParticipantsPerTeam` | `8` | Maximum team size |
 | `ChallengeSettings__ChallengeStarted` | `false` | Whether challenge has started |
-| `ChallengeSettings__ChallengeStartDate` | `10/04/2025` | Challenge start date |
+| `ChallengeSettings__ChallengeStartDate` | `10/04/2026` | Challenge start date |
 
 To modify, update the environment variables in App Service → **Environment variables**.
 

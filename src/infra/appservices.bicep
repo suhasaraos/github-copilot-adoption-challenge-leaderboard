@@ -133,7 +133,7 @@ resource webApp 'Microsoft.Web/sites@2024-11-01' = {
         }
         {
           name: 'ChallengeSettings__ChallengeStartDate'
-          value: '10/04/2025'
+          value: '10/04/2026'
         }
       ]
       alwaysOn: true

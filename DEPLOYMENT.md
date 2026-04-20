@@ -628,7 +628,7 @@ AzureAd__ClientSecret = @Microsoft.KeyVault(SecretUri=https://<keyvault-name>.va
 - Resource Group
 - Virtual Network with subnets
 - App Service Plan (Premium V2)
-- App Service (Linux, .NET 8) with System-Assigned Managed Identity
+- App Service (Linux, .NET 10) with System-Assigned Managed Identity
 - Azure SQL Database with Entra ID authentication
 - Key Vault for secrets
 - Private Endpoints for secure connectivity

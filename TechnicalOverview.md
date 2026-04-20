@@ -3,7 +3,7 @@
 
 ## Architecture (Conceptual)
 A simplified architecture consists of:
-1. Azure App Service (Web App) hosting the .NET 8 application.
+1. Azure App Service (Web App) hosting the .NET 10 application.
 2. Azure SQL Database for persistence (participant, team, score, metrics, and announcement data).
 3. Azure Key Vault for secrets (GitHub PATs, SMTP credentials, client secrets if applicable).
 4. Microsoft Entra ID for authentication & authorization of users.
@@ -24,7 +24,7 @@ A simplified architecture consists of:
 ---
 ## Requirements
 ### 1. Azure App Service
-- Deploy code-based .NET 8 binaries.
+- Deploy code-based .NET 10 binaries.
 - Enable **System-Assigned Managed Identity** (used for Azure SQL + Key Vault access).
 - TLS termination with Azure-managed certificate (HTTPS / port 443).
 - Configure SMTP server for outbound email (account management / notifications as needed).

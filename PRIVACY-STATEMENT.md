@@ -1,7 +1,7 @@
 # Security and Privacy Statement
 ## Microsoft Leaderboard App
 
-This Leaderboard App is not a Microsoft product. Microsoft has provided the compiled binaries for customer use; it is not an open-source project. The following is not an official Microsoft statement but a description of the app's functionality and the deployment guidance we provide.
+This Leaderboard App is published by Microsoft as a public sample repository. Customers may review, adapt, and deploy the code in their own Azure environment. It is not an official Microsoft product or managed service. This document is not a formal Microsoft Privacy Statement; it describes the app's architecture, deployment model, and privacy/security considerations when deployed by customers.
 
 ## Customer-Controlled Deployment
 

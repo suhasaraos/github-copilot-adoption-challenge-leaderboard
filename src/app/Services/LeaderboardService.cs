@@ -48,13 +48,9 @@ namespace LeaderboardApp.Services
                     .Where(ts => ts.Teamid == entry.Teamid)
                     .SumAsync(ts => ts.Totalacceptancescount); // Example logic based on acceptances count
 
-                // Calculate score from ParticipantScores
+                // Calculate score from ParticipantScores (Score is already pre-calculated at insert time)
                 var participantScores = await _context.Participantscores
                     .Where(ps => ps.Participant.Teamid == entry.Teamid)
-                    .Join(_context.Activities, ps => ps.Activityid, a => a.Activityid, (ps, a) => new
-                    {
-                        Score = a.Weighttype == "Multiplier" ? ps.Score * a.Weight : ps.Score
-                    })
                     .SumAsync(ps => ps.Score);
 
                 // Combine the scores

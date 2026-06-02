@@ -169,12 +169,18 @@ namespace LeaderboardApp.Services
         {
             team.Teamid = Guid.NewGuid();
 
+            // Default icon if none provided
+            if (string.IsNullOrWhiteSpace(team.Icon))
+                team.Icon = "https://img.icons8.com/fluency/48/team.png";
+
             // If no slug was provided, create team on GitHub and use the slug returned
             if (string.IsNullOrWhiteSpace(team.GitHubSlug))
             {
                 var slug = await _githubService.CreateTeamAsync(team.Name);
                 if (!string.IsNullOrWhiteSpace(slug))
                     team.GitHubSlug = slug;
+                else
+                    team.GitHubSlug = "notavailable"; // Default when GitHub is disabled
             }
             else
             {
@@ -183,6 +189,14 @@ namespace LeaderboardApp.Services
                     "Creating team '{TeamName}' with manually supplied GitHub slug '{Slug}'",
                     team.Name, team.GitHubSlug);
             }
+
+            // Original code (before fix):
+            // if (string.IsNullOrWhiteSpace(team.GitHubSlug))
+            // {
+            //     var slug = await _githubService.CreateTeamAsync(team.Name);
+            //     if (!string.IsNullOrWhiteSpace(slug))
+            //         team.GitHubSlug = slug;
+            // }
 
             _context.Teams.Add(team);
             await _context.SaveChangesAsync();
@@ -208,7 +222,8 @@ namespace LeaderboardApp.Services
             }
 
             existing.Name = team.Name;
-            existing.Icon = team.Icon;
+            // existing.Icon = team.Icon;
+            existing.Icon = string.IsNullOrWhiteSpace(team.Icon) ? existing.Icon : team.Icon;
             existing.Tagline = team.Tagline;
             existing.GitHubSlug = team.GitHubSlug;
             await _context.SaveChangesAsync();

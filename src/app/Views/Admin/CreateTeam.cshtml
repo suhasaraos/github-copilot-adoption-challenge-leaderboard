@@ -17,7 +17,7 @@
             <form asp-action="CreateTeam" asp-controller="Admin" method="post">
                 @Html.AntiForgeryToken()
 
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="@(ViewContext.ModelState.IsValid ? "display:none" : "")"></div>
+                <div asp-validation-summary="All" class="alert alert-danger" style="@(ViewContext.ModelState.ErrorCount == 0 ? "display:none" : "")"></div>
 
                 <div class="form-group">
                     <label asp-for="Name" class="control-label">Team Name <span class="text-danger">*</span></label>
@@ -26,8 +26,10 @@
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="Icon" class="control-label">Icon URL <span class="text-danger">*</span></label>
-                    <input asp-for="Icon" class="form-control" placeholder="https://example.com/icon.png" id="iconInput" />
+                    @* Old: <label asp-for="Icon" class="control-label">Icon URL <span class="text-danger">*</span></label> *@
+                    <label asp-for="Icon" class="control-label">Icon URL <span class="text-muted">(optional)</span></label>
+                    @* Old: <input asp-for="Icon" class="form-control" placeholder="https://example.com/icon.png" id="iconInput" /> *@
+                    <input asp-for="Icon" class="form-control" placeholder="https://example.com/icon.png (leave blank for default)" id="iconInput" />
                     <span asp-validation-for="Icon" class="text-danger"></span>
                     <div class="mt-2">
                         <img id="iconPreview" src="" alt="preview" style="height:48px;width:48px;object-fit:cover;border-radius:4px;display:none;" />

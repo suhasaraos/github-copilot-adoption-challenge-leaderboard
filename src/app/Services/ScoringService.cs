@@ -198,6 +198,28 @@ namespace LeaderboardApp.Services
                         }
                     }
 
+                    if (metric.DotComChat?.Models != null)
+                    {
+                        foreach (var model in metric.DotComChat.Models)
+                        {
+                            AddScore("TotalDotComChats", metric.Date, model.TotalChats);
+                        }
+                    }
+
+                    if (metric.PullRequests?.Repositories != null)
+                    {
+                        foreach (var repo in metric.PullRequests.Repositories)
+                        {
+                            if (repo.Models != null)
+                            {
+                                foreach (var model in repo.Models)
+                                {
+                                    AddScore("TotalPRSummariesCreated", metric.Date, model.TotalPRSummariesCreated);
+                                }
+                            }
+                        }
+                    }
+
                     AddScore("ActiveUsersPerDay", metric.Date, metric.TotalActiveUsers);
                     AddScore("EngagedUsersPerDay", metric.Date, metric.TotalEngagedUsers);
                 }

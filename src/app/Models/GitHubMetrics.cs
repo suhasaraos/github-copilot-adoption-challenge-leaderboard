@@ -73,6 +73,9 @@ namespace LeaderboardApp.Models
         [JsonPropertyName("total_chat_insertion_events")]
         public int? TotalChatInsertionEvents { get; set; }
 
+        [JsonPropertyName("total_pr_summaries_created")]
+        public int? TotalPRSummariesCreated { get; set; }
+
         [JsonPropertyName("languages")]
         public List<GitHubLanguage>? Languages { get; set; }
     }

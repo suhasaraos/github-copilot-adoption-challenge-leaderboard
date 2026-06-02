@@ -112,11 +112,27 @@ FROM sys.database_role_members rm
 JOIN sys.database_principals r ON rm.role_principal_id = r.principal_id
 JOIN sys.database_principals p ON rm.member_principal_id = p.principal_id
 WHERE p.name = '<web_app_name>';
-```
 
+```
 You should see the three roles listed for your App Service managed identity. Replace `<web_app_name>` with the value of `WEB_APP_NAME` from `azd env get-values`.
 
+> **⚠️ If you do NOT see the three roles**, run the following script to connect to leaderboardDB and grant the managed identity access:
+>
+> ```powershell
+> pwsh ./src/infra/scripts/grant-sql-managed-identity-roles.ps1
+> ```
+>
+> After the script completes, re-run the verification query above in Query Editor to confirm the roles are now assigned.
 ---
+
+#### This script performs the following actions:
+
+- Connects to the target Azure SQL Database server and specified database.
+- Creates a database user for the application's Managed Identity from the external provider.
+- Assigns the required database roles: `db_datareader`, `db_datawriter`, and `db_ddladmin`.
+- Restarts the associated application service to apply the changes.
+
+After the script completes, re-run the verification query above in Query Editor to confirm the roles are now assigned.
 
 #### What These Permissions Do
 

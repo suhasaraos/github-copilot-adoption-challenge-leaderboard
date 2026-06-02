@@ -11,11 +11,15 @@ namespace LeaderboardApp.Controllers
     {
         private readonly IAdminService _adminService;
         private readonly ILogger<AdminController> _logger;
+        private readonly ScoringService _scoringService;
+        private readonly LeaderboardService _leaderboardService;
 
-        public AdminController(IAdminService adminService, ILogger<AdminController> logger)
+        public AdminController(IAdminService adminService, ILogger<AdminController> logger, ScoringService scoringService, LeaderboardService leaderboardService)
         {
             _adminService = adminService;
             _logger = logger;
+            _scoringService = scoringService;
+            _leaderboardService = leaderboardService;
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -170,8 +174,37 @@ namespace LeaderboardApp.Controllers
             if (RequireAdmin() is { } forbidden) return forbidden;
             if (RequireNotStarted("Teams") is { } locked) return locked;
 
+            // DEBUG: Log raw form values
+            _logger.LogWarning("RAW FORM DATA: Name='{Name}', Tagline='{Tagline}', Icon='{Icon}', GitHubSlug='{Slug}'",
+                Request.Form["Name"].ToString(), Request.Form["Tagline"].ToString(),
+                Request.Form["Icon"].ToString(), Request.Form["GitHubSlug"].ToString());
+            _logger.LogWarning("BOUND MODEL: Name='{Name}', Tagline='{Tagline}'", team.Name, team.Tagline);
+
+            // Convert empty Icon to null so [Url] validation passes
+            if (string.IsNullOrWhiteSpace(team.Icon))
+            {
+                team.Icon = null;
+                ModelState.Remove("Icon");
+            }
+
+            // Convert empty GitHubSlug to null
+            if (string.IsNullOrWhiteSpace(team.GitHubSlug))
+            {
+                team.GitHubSlug = null;
+                ModelState.Remove("GitHubSlug");
+            }
+
             if (!ModelState.IsValid)
+            {
+                foreach (var kvp in ModelState)
+                {
+                    foreach (var error in kvp.Value.Errors)
+                    {
+                        _logger.LogWarning("ModelState error for '{Key}': {Error}", kvp.Key, error.ErrorMessage);
+                    }
+                }
                 return View(team);
+            }
 
             try
             {
@@ -253,6 +286,39 @@ namespace LeaderboardApp.Controllers
             }
 
             return RedirectToAction("Teams");
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        //  Scoring Refresh
+        // ─────────────────────────────────────────────────────────────────────
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RefreshScores()
+        {
+            if (RequireAdmin() is { } forbidden) return forbidden;
+
+            try
+            {
+                var teams = await _adminService.GetAllTeamsAsync();
+                int processed = 0;
+
+                foreach (var team in teams.Where(t => !string.IsNullOrEmpty(t.GitHubSlug)))
+                {
+                    var result = await _scoringService.InsertTeamGitHubScoresAsync(team.GitHubSlug!);
+                    if (result) processed++;
+                }
+
+                await _leaderboardService.UpdateLeaderboardAsync();
+                TempData["Success"] = $"GitHub scores refreshed for {processed} team(s). Leaderboard updated.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing scores");
+                TempData["Error"] = $"Failed to refresh scores: {ex.Message}";
+            }
+
+            return RedirectToAction("Index");
         }
 
         // ─────────────────────────────────────────────────────────────────────

@@ -11,11 +11,15 @@ namespace LeaderboardApp.Controllers
     {
         private readonly IAdminService _adminService;
         private readonly ILogger<AdminController> _logger;
+        private readonly ScoringService _scoringService;
+        private readonly LeaderboardService _leaderboardService;
 
-        public AdminController(IAdminService adminService, ILogger<AdminController> logger)
+        public AdminController(IAdminService adminService, ILogger<AdminController> logger, ScoringService scoringService, LeaderboardService leaderboardService)
         {
             _adminService = adminService;
             _logger = logger;
+            _scoringService = scoringService;
+            _leaderboardService = leaderboardService;
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -282,6 +286,39 @@ namespace LeaderboardApp.Controllers
             }
 
             return RedirectToAction("Teams");
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        //  Scoring Refresh
+        // ─────────────────────────────────────────────────────────────────────
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RefreshScores()
+        {
+            if (RequireAdmin() is { } forbidden) return forbidden;
+
+            try
+            {
+                var teams = await _adminService.GetAllTeamsAsync();
+                int processed = 0;
+
+                foreach (var team in teams.Where(t => !string.IsNullOrEmpty(t.GitHubSlug)))
+                {
+                    var result = await _scoringService.InsertTeamGitHubScoresAsync(team.GitHubSlug!);
+                    if (result) processed++;
+                }
+
+                await _leaderboardService.UpdateLeaderboardAsync();
+                TempData["Success"] = $"GitHub scores refreshed for {processed} team(s). Leaderboard updated.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing scores");
+                TempData["Error"] = $"Failed to refresh scores: {ex.Message}";
+            }
+
+            return RedirectToAction("Index");
         }
 
         // ─────────────────────────────────────────────────────────────────────

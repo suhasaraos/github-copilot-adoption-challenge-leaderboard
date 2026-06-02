@@ -14,6 +14,19 @@ namespace LeaderboardApp.Services
         private static readonly string GHApiURLPrefix = "https://api.github.com/orgs";
         private readonly bool _enabled;
 
+        // ============================================================
+        // UPDATED: June 2026 - Migrated from deprecated Copilot Metrics API
+        // OLD API: X-GitHub-Api-Version: 2022-11-28, endpoint: /orgs/{org}/copilot/metrics
+        //   - Was shut down April 2, 2026 (returns 404)
+        //   - See: https://github.blog/changelog/2026-01-29-closing-down-notice-of-legacy-copilot-metrics-apis/
+        // NEW API: X-GitHub-Api-Version: 2026-03-10, endpoint: /orgs/{org}/copilot/metrics/reports/...
+        //   - Returns download_links to NDJSON report files
+        //   - Org-level: /organization-1-day?day=YYYY-MM-DD
+        //   - Per-user: /users-1-day?day=YYYY-MM-DD (NDJSON with user_login)
+        //   - User-teams: /user-teams-1-day?day=YYYY-MM-DD (user->team mapping)
+        //   - Requires read:org scope for classic PATs (admin:org also works)
+        // ============================================================
+
         public GitHubService(HttpClient httpClient, IConfiguration configuration, ILogger<GitHubService> logger)
         {
             _httpClient = httpClient;
@@ -44,7 +57,8 @@ namespace LeaderboardApp.Services
 
             if (!_httpClient.DefaultRequestHeaders.Contains("X-GitHub-Api-Version"))
             {
-                _httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
+                // UPDATED: Changed from "2022-11-28" to "2026-03-10" for new Copilot Usage Metrics API
+                _httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2026-03-10");
             }
 
             if (!_httpClient.DefaultRequestHeaders.UserAgent.Any())
@@ -60,9 +74,37 @@ namespace LeaderboardApp.Services
             return true;
         }
 
-        public async Task<List<GitHubMetrics>?> GetOrgCopilotMetricsAsync()
+        // ============================================================
+        // OLD API METHOD (DEPRECATED - shut down April 2, 2026):
+        // Used endpoint: GET /orgs/{org}/copilot/metrics
+        // Returned: List<GitHubMetrics> with nested editors/models/languages
+        // ============================================================
+        // public async Task<List<GitHubMetrics>?> GetOrgCopilotMetricsAsync()
+        // {
+        //     if (IsDisabled()) return new List<GitHubMetrics>();
+        //     var org = _configuration["GitHubSettings:Org"];
+        //     if (string.IsNullOrWhiteSpace(org)) { _logger.LogWarning("GitHub organization is not configured."); return null; }
+        //     var url = $"{GHApiURLPrefix}/{org}/copilot/metrics";
+        //     try
+        //     {
+        //         var response = await _httpClient.GetAsync(url);
+        //         var jsonResponse = await response.Content.ReadAsStringAsync();
+        //         if (!response.IsSuccessStatusCode) { _logger.LogError("Failed. Status: {StatusCode}", response.StatusCode); return null; }
+        //         var metrics = JsonSerializer.Deserialize<List<GitHubMetrics>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        //         return metrics;
+        //     }
+        //     catch (Exception ex) { _logger.LogError(ex, "Error fetching organization Copilot metrics."); return null; }
+        // }
+
+        // ============================================================
+        // NEW API METHOD: Get org-level metrics for a specific day
+        // Endpoint: GET /orgs/{org}/copilot/metrics/reports/organization-1-day?day=YYYY-MM-DD
+        // Returns: { download_links: [...], report_day: "..." }
+        // Then downloads the NDJSON file from download_links[0]
+        // ============================================================
+        public async Task<CopilotOrgDayReport?> GetOrgCopilotMetricsAsync(DateTime? day = null)
         {
-            if (IsDisabled()) return new List<GitHubMetrics>();
+            if (IsDisabled()) return null;
 
             var org = _configuration["GitHubSettings:Org"];
             if (string.IsNullOrWhiteSpace(org))
@@ -71,7 +113,9 @@ namespace LeaderboardApp.Services
                 return null;
             }
 
-            var url = $"{GHApiURLPrefix}/{org}/copilot/metrics";
+            var targetDay = (day ?? DateTime.UtcNow.AddDays(-1)).ToString("yyyy-MM-dd");
+            var url = $"{GHApiURLPrefix}/{org}/copilot/metrics/reports/organization-1-day?day={targetDay}";
+
             try
             {
                 var response = await _httpClient.GetAsync(url);
@@ -79,21 +123,34 @@ namespace LeaderboardApp.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError("Failed to fetch organization Copilot metrics. Status: {StatusCode}, Response: {Response}", response.StatusCode, jsonResponse);
+                    _logger.LogError("Failed to fetch org metrics report links. Status: {StatusCode}, Response: {Response}", response.StatusCode, jsonResponse);
                     return null;
                 }
 
-                var metrics = JsonSerializer.Deserialize<List<GitHubMetrics>>(jsonResponse, new JsonSerializerOptions
+                var reportLinks = JsonSerializer.Deserialize<CopilotReportLinks>(jsonResponse);
+                if (reportLinks?.DownloadLinks == null || reportLinks.DownloadLinks.Count == 0)
                 {
-                    PropertyNameCaseInsensitive = true
-                });
+                    _logger.LogWarning("No download links returned for org metrics on {Day}", targetDay);
+                    return null;
+                }
 
-                _logger.LogInformation("Successfully fetched organization Copilot metrics.");
-                return metrics;
+                // Download the actual report (NDJSON - single line JSON for org report)
+                var reportResponse = await _httpClient.GetAsync(reportLinks.DownloadLinks[0]);
+                if (!reportResponse.IsSuccessStatusCode)
+                {
+                    _logger.LogError("Failed to download org report. Status: {StatusCode}", reportResponse.StatusCode);
+                    return null;
+                }
+
+                var reportJson = await reportResponse.Content.ReadAsStringAsync();
+                var report = JsonSerializer.Deserialize<CopilotOrgDayReport>(reportJson.Trim());
+
+                _logger.LogInformation("Successfully fetched NEW org Copilot metrics for {Day}: daily_active_users={ActiveUsers}", targetDay, report?.DailyActiveUsers);
+                return report;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching organization Copilot metrics.");
+                _logger.LogError(ex, "Error fetching org Copilot metrics for {Day}.", day);
                 return null;
             }
         }
@@ -340,13 +397,94 @@ namespace LeaderboardApp.Services
             }
         }
 
-        public async Task<List<GitHubMetrics>?> GetCopilotMetricsAsync(string teamSlug)
+        // ============================================================
+        // OLD API METHOD (DEPRECATED - shut down April 2, 2026):
+        // Used endpoint: GET /orgs/{org}/team/{teamSlug}/copilot/metrics
+        // Returned: List<GitHubMetrics> per team with nested editors/models/languages
+        // ============================================================
+        // public async Task<List<GitHubMetrics>?> GetCopilotMetricsAsync(string teamSlug)
+        // {
+        //     if (IsDisabled()) return new List<GitHubMetrics>();
+        //     var org = _configuration["GitHubSettings:Org"];
+        //     if (string.IsNullOrWhiteSpace(org)) { _logger.LogWarning("GitHub organization is not configured."); return null; }
+        //     var url = $"{GHApiURLPrefix}/{org}/team/{teamSlug}/copilot/metrics";
+        //     try
+        //     {
+        //         var response = await _httpClient.GetAsync(url);
+        //         var jsonResponse = await response.Content.ReadAsStringAsync();
+        //         if (!response.IsSuccessStatusCode) { _logger.LogError("Failed. Status: {StatusCode}", response.StatusCode); return null; }
+        //         var metrics = JsonSerializer.Deserialize<List<GitHubMetrics>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        //         return metrics;
+        //     }
+        //     catch (Exception ex) { _logger.LogError(ex, "Error fetching GitHub Copilot metrics."); return null; }
+        // }
+
+        // ============================================================
+        // NEW API METHOD: Get per-user metrics for a specific day
+        // Endpoint: GET /orgs/{org}/copilot/metrics/reports/users-1-day?day=YYYY-MM-DD
+        // Returns NDJSON: one JSON line per user with user_login, totals_by_feature, etc.
+        // We filter to users in the team using the user-teams report
+        // ============================================================
+        public async Task<List<CopilotUserDayReport>?> GetCopilotMetricsAsync(string teamSlug, DateTime? day = null)
         {
-            if (IsDisabled()) return new List<GitHubMetrics>();
+            if (IsDisabled()) return new List<CopilotUserDayReport>();
 
             var org = _configuration["GitHubSettings:Org"];
             if (string.IsNullOrWhiteSpace(org)) { _logger.LogWarning("GitHub organization is not configured."); return null; }
-            var url = $"{GHApiURLPrefix}/{org}/team/{teamSlug}/copilot/metrics";
+
+            var targetDay = (day ?? DateTime.UtcNow.AddDays(-1)).ToString("yyyy-MM-dd");
+
+            try
+            {
+                // Step 1: Get user-teams mapping to find which users belong to this team
+                var teamUsers = await GetTeamUsersFromReportAsync(org, teamSlug, targetDay);
+                if (teamUsers == null || teamUsers.Count == 0)
+                {
+                    _logger.LogWarning("No users found in team {TeamSlug} from user-teams report for {Day}. Falling back to team members API.", teamSlug, targetDay);
+                    // Fallback: use the team members API
+                    var members = await GetTeamMembersAsync(teamSlug);
+                    teamUsers = members?.Select(m => m.Login.ToLowerInvariant()).ToHashSet() ?? new HashSet<string>();
+                }
+
+                if (teamUsers.Count == 0)
+                {
+                    _logger.LogWarning("No users found in team {TeamSlug}", teamSlug);
+                    return new List<CopilotUserDayReport>();
+                }
+
+                // Step 2: Get all users' metrics for the day
+                var allUserReports = await GetAllUserMetricsForDayAsync(org, targetDay);
+                if (allUserReports == null || allUserReports.Count == 0)
+                {
+                    _logger.LogWarning("No user metrics available for {Day}", targetDay);
+                    return new List<CopilotUserDayReport>();
+                }
+
+                // Step 3: Filter to users in this team
+                var teamMetrics = allUserReports
+                    .Where(u => teamUsers.Contains(u.UserLogin?.ToLowerInvariant() ?? ""))
+                    .ToList();
+
+                _logger.LogInformation("Found {Count} user metrics for team {TeamSlug} on {Day} (out of {Total} total users)",
+                    teamMetrics.Count, teamSlug, targetDay, allUserReports.Count);
+
+                return teamMetrics;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching Copilot metrics for team {TeamSlug}.", teamSlug);
+                return null;
+            }
+        }
+
+        // ============================================================
+        // NEW HELPER: Get user-team mapping from the new API
+        // Endpoint: GET /orgs/{org}/copilot/metrics/reports/user-teams-1-day?day=YYYY-MM-DD
+        // Returns NDJSON: {"user_login":"...", "slug":"team-slug", ...}
+        // ============================================================
+        private async Task<HashSet<string>> GetTeamUsersFromReportAsync(string org, string teamSlug, string day)
+        {
+            var url = $"{GHApiURLPrefix}/{org}/copilot/metrics/reports/user-teams-1-day?day={day}";
             try
             {
                 var response = await _httpClient.GetAsync(url);
@@ -354,22 +492,129 @@ namespace LeaderboardApp.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError("Failed to fetch Copilot metrics. Status: {StatusCode}, Response: {Response}", response.StatusCode, jsonResponse);
-                    return null;
+                    _logger.LogWarning("Failed to fetch user-teams report. Status: {StatusCode}", response.StatusCode);
+                    return new HashSet<string>();
                 }
 
-                var metrics = JsonSerializer.Deserialize<List<GitHubMetrics>>(jsonResponse, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                var reportLinks = JsonSerializer.Deserialize<CopilotReportLinks>(jsonResponse);
+                if (reportLinks?.DownloadLinks == null || reportLinks.DownloadLinks.Count == 0)
+                    return new HashSet<string>();
 
-                return metrics;
+                var reportResponse = await _httpClient.GetAsync(reportLinks.DownloadLinks[0]);
+                if (!reportResponse.IsSuccessStatusCode)
+                    return new HashSet<string>();
+
+                var reportText = await reportResponse.Content.ReadAsStringAsync();
+                var users = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var line in reportText.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var entry = JsonSerializer.Deserialize<CopilotUserTeamEntry>(line);
+                    if (entry != null && string.Equals(entry.Slug, teamSlug, StringComparison.OrdinalIgnoreCase))
+                    {
+                        users.Add(entry.UserLogin?.ToLowerInvariant() ?? "");
+                    }
+                }
+
+                _logger.LogInformation("User-teams report: found {Count} users in team {TeamSlug} for {Day}", users.Count, teamSlug, day);
+                return users;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching GitHub Copilot metrics.");
-                return null;
+                _logger.LogWarning(ex, "Error fetching user-teams report for {Day}", day);
+                return new HashSet<string>();
             }
+        }
+
+        // ============================================================
+        // NEW HELPER: Get ALL user metrics for a day (NDJSON)
+        // Endpoint: GET /orgs/{org}/copilot/metrics/reports/users-1-day?day=YYYY-MM-DD
+        // Returns NDJSON: one JSON per line per user
+        // ============================================================
+        private async Task<List<CopilotUserDayReport>> GetAllUserMetricsForDayAsync(string org, string day)
+        {
+            var url = $"{GHApiURLPrefix}/{org}/copilot/metrics/reports/users-1-day?day={day}";
+            try
+            {
+                var response = await _httpClient.GetAsync(url);
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("Failed to fetch users-1-day report. Status: {StatusCode}, Response: {Response}", response.StatusCode, jsonResponse);
+                    return new List<CopilotUserDayReport>();
+                }
+
+                var reportLinks = JsonSerializer.Deserialize<CopilotReportLinks>(jsonResponse);
+                if (reportLinks?.DownloadLinks == null || reportLinks.DownloadLinks.Count == 0)
+                    return new List<CopilotUserDayReport>();
+
+                var reports = new List<CopilotUserDayReport>();
+
+                // May have multiple download links for large orgs
+                foreach (var downloadLink in reportLinks.DownloadLinks)
+                {
+                    var reportResponse = await _httpClient.GetAsync(downloadLink);
+                    if (!reportResponse.IsSuccessStatusCode) continue;
+
+                    var reportText = await reportResponse.Content.ReadAsStringAsync();
+                    foreach (var line in reportText.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        var userReport = JsonSerializer.Deserialize<CopilotUserDayReport>(line);
+                        if (userReport != null)
+                            reports.Add(userReport);
+                    }
+                }
+
+                _logger.LogInformation("Fetched {Count} user reports for {Day}", reports.Count, day);
+                return reports;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching user metrics for {Day}", day);
+                return new List<CopilotUserDayReport>();
+            }
+        }
+
+        // ============================================================
+        // NEW HELPER: Get org metrics for multiple days (for scoring service)
+        // Iterates from startDate to yesterday, fetching org-level 1-day reports
+        // ============================================================
+        public async Task<List<CopilotOrgDayReport>> GetOrgMetricsForDateRangeAsync(DateTime startDate)
+        {
+            if (IsDisabled()) return new List<CopilotOrgDayReport>();
+
+            var results = new List<CopilotOrgDayReport>();
+            var endDate = DateTime.UtcNow.Date.AddDays(-1); // yesterday
+
+            for (var date = startDate.Date; date <= endDate; date = date.AddDays(1))
+            {
+                var report = await GetOrgCopilotMetricsAsync(date);
+                if (report != null)
+                    results.Add(report);
+            }
+
+            return results;
+        }
+
+        // ============================================================
+        // NEW HELPER: Get per-user metrics for multiple days (for team scoring)
+        // ============================================================
+        public async Task<List<CopilotUserDayReport>> GetTeamMetricsForDateRangeAsync(string teamSlug, DateTime startDate)
+        {
+            if (IsDisabled()) return new List<CopilotUserDayReport>();
+
+            var results = new List<CopilotUserDayReport>();
+            var endDate = DateTime.UtcNow.Date.AddDays(-1);
+
+            for (var date = startDate.Date; date <= endDate; date = date.AddDays(1))
+            {
+                var dayMetrics = await GetCopilotMetricsAsync(teamSlug, date);
+                if (dayMetrics != null)
+                    results.AddRange(dayMetrics);
+            }
+
+            return results;
         }
 
         public async Task<List<GitHubMember>?> GetTeamMembersAsync(string? teamSlug)

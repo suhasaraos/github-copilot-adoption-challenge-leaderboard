@@ -43,18 +43,12 @@ namespace LeaderboardApp.Services
 
             foreach (var entry in leaderboardEntries)
             {
-                // Calculate score from TeamSummaries
-                var teamSummaryScore = await _context.Teamdailysummaries
-                    .Where(ts => ts.Teamid == entry.Teamid)
-                    .SumAsync(ts => ts.Totalacceptancescount); // Example logic based on acceptances count
-
                 // Calculate score from ParticipantScores (Score is already pre-calculated at insert time)
                 var participantScores = await _context.Participantscores
                     .Where(ps => ps.Participant.Teamid == entry.Teamid)
                     .SumAsync(ps => ps.Score);
 
-                // Combine the scores
-                entry.Score = teamSummaryScore + (int)participantScores;
+                entry.Score = (int)participantScores;
                 entry.Lastupdated = DateTime.UtcNow;
 
                 _context.Entry(entry).State = EntityState.Modified;

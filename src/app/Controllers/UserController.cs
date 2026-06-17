@@ -104,7 +104,9 @@ namespace LeaderboardApp.Controllers
 
                 ViewBag.FullTeamIds = fullTeamIds;
                 ViewBag.Teams = teams;
-                ViewBag.ChallengeStarted = _configuration.GetValue<bool>("ChallengeSettings:ChallengeStarted");
+                var startDateStr = _configuration.GetValue<string>("ChallengeSettings:ChallengeStartDate");
+                var challengeStarted = DateTime.TryParse(startDateStr, out var startDate) && DateTime.UtcNow >= startDate;
+                ViewBag.ChallengeStarted = challengeStarted;
 
                 // Get last activity time from GitHub Service
                 try
@@ -144,7 +146,8 @@ namespace LeaderboardApp.Controllers
                     return BadRequest(new { message = "No data provided." });
                 }
 
-                var challengeStarted = _configuration.GetValue<bool>("ChallengeSettings:ChallengeStarted");
+                var startDateStr = _configuration.GetValue<string>("ChallengeSettings:ChallengeStartDate");
+                var challengeStarted = DateTime.TryParse(startDateStr, out var startDate) && DateTime.UtcNow >= startDate;
                 if (challengeStarted)
                 {
                     return BadRequest(new { message = "The challenge has started. You cannot edit your profile." });

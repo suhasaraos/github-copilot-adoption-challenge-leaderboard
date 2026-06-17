@@ -31,6 +31,9 @@ namespace LeaderboardApp.Services
             // Initial delay to let the app start up
             await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
 
+            // Fix any teams with invalid "notavailable" slug
+            await FixInvalidTeamSlugsAsync(stoppingToken);
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
@@ -86,6 +89,42 @@ namespace LeaderboardApp.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to update leaderboard after GitHub scoring");
+            }
+        }
+
+        private async Task FixInvalidTeamSlugsAsync(CancellationToken stoppingToken)
+        {
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<GhcacDbContext>();
+                var githubService = scope.ServiceProvider.GetRequiredService<GitHubService>();
+
+                var invalidTeams = await context.Teams
+                    .Where(t => t.GitHubSlug == "notavailable")
+                    .ToListAsync(stoppingToken);
+
+                if (invalidTeams.Count == 0) return;
+
+                _logger.LogInformation("Found {Count} teams with invalid 'notavailable' slug. Fixing...", invalidTeams.Count);
+
+                foreach (var team in invalidTeams)
+                {
+                    if (stoppingToken.IsCancellationRequested) break;
+
+                    var slug = await githubService.CreateTeamAsync(team.Name);
+                    if (!string.IsNullOrWhiteSpace(slug))
+                    {
+                        team.GitHubSlug = slug;
+                        _logger.LogInformation("Fixed team '{TeamName}' slug to '{Slug}'", team.Name, slug);
+                    }
+                }
+
+                await context.SaveChangesAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fixing invalid team slugs");
             }
         }
     }

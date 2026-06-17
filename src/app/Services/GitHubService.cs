@@ -9,6 +9,7 @@ namespace LeaderboardApp.Services
     public class GitHubService
     {
         private readonly HttpClient _httpClient;
+        private readonly HttpClient _reportDownloadClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<GitHubService> _logger;
         private static readonly string GHApiURLPrefix = "https://api.github.com/orgs";
@@ -33,6 +34,10 @@ namespace LeaderboardApp.Services
             _configuration = configuration;
             _logger = logger;
             _enabled = configuration.GetValue<bool>("GitHubSettings:Enabled", true);
+
+            // Separate client for downloading pre-signed SAS report URLs (no auth header)
+            _reportDownloadClient = new HttpClient();
+            _reportDownloadClient.DefaultRequestHeaders.UserAgent.ParseAdd("LeaderboardApp");
 
             if (!_enabled)
             {
@@ -72,6 +77,15 @@ namespace LeaderboardApp.Services
             if (_enabled) return false;
             _logger.LogDebug("GitHubService call skipped because integration is disabled.");
             return true;
+        }
+
+        /// <summary>
+        /// Downloads a report from a pre-signed SAS URL WITHOUT sending the Authorization header.
+        /// Azure Blob Storage rejects requests that include an Authorization header alongside a SAS token.
+        /// </summary>
+        private async Task<HttpResponseMessage> DownloadReportAsync(string reportUrl)
+        {
+            return await _reportDownloadClient.GetAsync(reportUrl);
         }
 
         // ============================================================
@@ -135,7 +149,8 @@ namespace LeaderboardApp.Services
                 }
 
                 // Download the actual report (NDJSON - single line JSON for org report)
-                var reportResponse = await _httpClient.GetAsync(reportLinks.DownloadLinks[0]);
+                // Use DownloadReportAsync to avoid sending Authorization header to Azure Blob Storage SAS URLs
+                var reportResponse = await DownloadReportAsync(reportLinks.DownloadLinks[0]);
                 if (!reportResponse.IsSuccessStatusCode)
                 {
                     _logger.LogError("Failed to download org report. Status: {StatusCode}", reportResponse.StatusCode);
@@ -185,7 +200,26 @@ namespace LeaderboardApp.Services
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogError("GitHub team creation failed. Status: {StatusCode}, Response: {Response}",
-                    response.StatusCode, jsonResponse);                
+                    response.StatusCode, jsonResponse);
+
+                // If 422 (Validation Failed), the team may already exist - try to get it
+                if (response.StatusCode == System.Net.HttpStatusCode.UnprocessableEntity)
+                {
+                    var fallbackSlug = teamName.ToLowerInvariant().Replace(" ", "-").Replace("'", "");
+                    fallbackSlug = System.Text.RegularExpressions.Regex.Replace(fallbackSlug, @"[^a-z0-9\-]", "");
+                    fallbackSlug = System.Text.RegularExpressions.Regex.Replace(fallbackSlug, @"-+", "-").Trim('-');
+                    var checkUrl = $"{GHApiURLPrefix}/{org}/teams/{fallbackSlug}";
+                    var checkResp = await _httpClient.GetAsync(checkUrl);
+                    if (checkResp.IsSuccessStatusCode)
+                    {
+                        var checkJson = await checkResp.Content.ReadAsStringAsync();
+                        using var checkDoc = JsonDocument.Parse(checkJson);
+                        var existingSlug = checkDoc.RootElement.GetProperty("slug").GetString();
+                        _logger.LogInformation("GitHub team already exists with slug: {Slug}", existingSlug);
+                        return existingSlug ?? string.Empty;
+                    }
+                }
+
                 return string.Empty;
             }
 
@@ -500,7 +534,7 @@ namespace LeaderboardApp.Services
                 if (reportLinks?.DownloadLinks == null || reportLinks.DownloadLinks.Count == 0)
                     return new HashSet<string>();
 
-                var reportResponse = await _httpClient.GetAsync(reportLinks.DownloadLinks[0]);
+                var reportResponse = await DownloadReportAsync(reportLinks.DownloadLinks[0]);
                 if (!reportResponse.IsSuccessStatusCode)
                     return new HashSet<string>();
 
@@ -554,7 +588,7 @@ namespace LeaderboardApp.Services
                 // May have multiple download links for large orgs
                 foreach (var downloadLink in reportLinks.DownloadLinks)
                 {
-                    var reportResponse = await _httpClient.GetAsync(downloadLink);
+                    var reportResponse = await DownloadReportAsync(downloadLink);
                     if (!reportResponse.IsSuccessStatusCode) continue;
 
                     var reportText = await reportResponse.Content.ReadAsStringAsync();
@@ -580,6 +614,36 @@ namespace LeaderboardApp.Services
         // NEW HELPER: Get org metrics for multiple days (for scoring service)
         // Iterates from startDate to yesterday, fetching org-level 1-day reports
         // ============================================================
+
+        /// <summary>
+        /// Public entry point: fetches ALL user metrics for the last 7 days (org-wide).
+        /// The teamSlug parameter is used only for logging context.
+        /// Returns combined reports across all days (each report has its own day field).
+        /// </summary>
+        public async Task<List<CopilotUserDayReport>> GetAllUserMetricsForDayAsync(string teamSlug)
+        {
+            if (IsDisabled()) return new List<CopilotUserDayReport>();
+
+            var org = _configuration["GitHubSettings:Org"];
+            if (string.IsNullOrWhiteSpace(org)) { _logger.LogWarning("GitHub organization is not configured."); return new List<CopilotUserDayReport>(); }
+
+            var allReports = new List<CopilotUserDayReport>();
+            // Fetch last 7 days to catch up on any missed scoring runs
+            for (int i = 1; i <= 7; i++)
+            {
+                var day = DateTime.UtcNow.AddDays(-i).ToString("yyyy-MM-dd");
+                var dayReports = await GetAllUserMetricsForDayAsync(org, day);
+                if (dayReports.Count > 0)
+                {
+                    allReports.AddRange(dayReports);
+                    _logger.LogInformation("Fetched {Count} user reports for {Day} (scoring team {TeamSlug})", dayReports.Count, day, teamSlug);
+                }
+            }
+
+            _logger.LogInformation("Total user metrics fetched across 7 days for team {TeamSlug}: {Count}", teamSlug, allReports.Count);
+            return allReports;
+        }
+
         public async Task<List<CopilotOrgDayReport>> GetOrgMetricsForDateRangeAsync(DateTime startDate)
         {
             if (IsDisabled()) return new List<CopilotOrgDayReport>();

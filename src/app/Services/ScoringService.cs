@@ -1,8 +1,6 @@
 ﻿using LeaderboardApp.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace LeaderboardApp.Services
 {
@@ -11,7 +9,6 @@ namespace LeaderboardApp.Services
         private readonly GhcacDbContext _context;
         private readonly ILogger<ScoringService> _logger;
         private readonly GitHubService _gitHubService;
-        private readonly DateTime _challengeStartDate;
         private readonly bool _githubEnabled;
 
         public ScoringService(
@@ -24,13 +21,6 @@ namespace LeaderboardApp.Services
             _gitHubService = gitHubService;
             _context = context;
             _githubEnabled = configuration.GetValue<bool>("GitHubSettings:Enabled", true);
-
-            var challengeStartDateString = configuration["ChallengeSettings:ChallengeStartDate"];
-            if (!DateTime.TryParse(challengeStartDateString, out _challengeStartDate))
-            {
-                _challengeStartDate = DateTime.MinValue;
-                _logger.LogWarning("ChallengeStartDate is missing or invalid in configuration. All scores will be processed.");
-            }
         }
 
         public async Task<bool> InsertTeamGitHubScoresAsync(string teamSlug)
@@ -38,28 +28,15 @@ namespace LeaderboardApp.Services
             if (!_githubEnabled)
             {
                 _logger.LogInformation("GitHub scoring skipped because GitHubSettings:Enabled=false");
-                return true; // treat as success
+                return true;
             }
-
-            // ============================================================
-            // UPDATED: Now uses the new Copilot Usage Metrics API (v2026-03-10)
-            // OLD: Called GetOrgCopilotMetricsAsync() which returned List<GitHubMetrics>
-            //      with nested editors/models/languages structure
-            // NEW: Calls GetOrgCopilotMetricsAsync(day) which returns CopilotOrgDayReport
-            //      with flat totals_by_feature[] array
-            // ============================================================
 
             // Step 1: Store org-level metrics (for audit/dashboard)
             try
             {
                 var orgReport = await _gitHubService.GetOrgCopilotMetricsAsync();
-                if (orgReport == null)
+                if (orgReport != null)
                 {
-                    _logger.LogWarning("No org metrics returned from new API");
-                }
-                else
-                {
-                    _logger.LogInformation("Org metrics returned: daily_active_users={ActiveUsers}", orgReport.DailyActiveUsers);
                     var reportDate = orgReport.GetDate();
                     var existingDate = await _context.MetricsData
                         .Where(md => md.Date.Date == reportDate.Date)
@@ -72,44 +49,18 @@ namespace LeaderboardApp.Services
                             Date = reportDate,
                             JsonResponse = JsonSerializer.Serialize(orgReport)
                         });
+                        await _context.SaveChangesAsync();
                     }
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while storing org metrics for team {TeamSlug}", teamSlug);
-                // Don't return false - continue to team scoring
             }
 
-            // Step 2: Get per-user metrics filtered by team and score them
-            // ============================================================
-            // OLD: Called GetCopilotMetricsAsync(teamSlug) → List<GitHubMetrics>
-            //      Then iterated nested: metric.IdeChat.Editors[].Models[].TotalChats etc.
-            // NEW: Calls GetCopilotMetricsAsync(teamSlug, day) → List<CopilotUserDayReport>
-            //      Each user report has flat totals_by_feature[] with feature name + counts
-            //      We SUM across all users in the team for each feature/activity
-            // ============================================================
+            // Step 2: Score per-participant by matching GitHub handles
             try
             {
-                var userMetrics = await _gitHubService.GetCopilotMetricsAsync(teamSlug);
-                if (userMetrics == null || userMetrics.Count == 0)
-                {
-                    _logger.LogWarning("No user metrics returned for team {TeamSlug}", teamSlug);
-                    return false;
-                }
-
-                // Group by day (new reports come one-per-user-per-day)
-                var metricsByDay = userMetrics
-                    .GroupBy(u => u.GetDate().Date)
-                    .Where(g => g.Key >= _challengeStartDate.Date)
-                    .ToList();
-
-                if (metricsByDay.Count == 0)
-                {
-                    _logger.LogInformation("No metrics to process for team {TeamSlug} after ChallengeStartDate {ChallengeStartDate}", teamSlug, _challengeStartDate);
-                    return false;
-                }
-
                 var team = await _context.Teams.FirstOrDefaultAsync(t => t.GitHubSlug == teamSlug);
                 if (team == null)
                 {
@@ -117,147 +68,140 @@ namespace LeaderboardApp.Services
                     return false;
                 }
 
-                var activities = _context.Activities.ToList();
+                // Get ALL participants in this team who have a GitHub handle
+                var participants = await _context.Participants
+                    .Where(p => p.Teamid == team.Teamid && p.Githubhandle != null && p.Githubhandle != "")
+                    .ToListAsync();
 
-                var participant = await _context.Participants
-                    .Where(p => p.Teamid == team.Teamid)
-                    .FirstOrDefaultAsync();
-
-                if (participant == null)
+                if (participants.Count == 0)
                 {
+                    _logger.LogWarning("No participants with GitHub handles in team {TeamSlug}", teamSlug);
                     return false;
                 }
 
-                var existingScores = await _context.Participantscores
-                    .Where(ps => ps.Participantid == participant.Participantid && ps.Teamid == team.Teamid)
-                    .ToListAsync();
+                // Build a lookup of GitHub handle → participant (case-insensitive)
+                var handleToParticipant = participants
+                    .ToDictionary(p => p.Githubhandle!.ToLowerInvariant(), p => p);
 
-                var scoreEntries = new List<Participantscore>();
-
-                void AddScore(string activityName, DateTime metricDate, decimal? value)
+                // Fetch ALL user metrics for yesterday from the org-wide report
+                var allUserMetrics = await _gitHubService.GetAllUserMetricsForDayAsync(teamSlug);
+                if (allUserMetrics == null || allUserMetrics.Count == 0)
                 {
-                    if (value.HasValue && value.Value > 0)
-                    {
-                        var activity = activities.FirstOrDefault(a => a.Name == activityName);
-
-                        if (activity == null)
-                        {
-                            _logger.LogWarning("Activity {ActivityName} not found for team {TeamSlug}", activityName, teamSlug);
-                            return;
-                        }
-
-                        if (existingScores.Any(es => es.Activityid == activity.Activityid && es.Timestamp.HasValue && es.Timestamp.Value.Date == metricDate.Date))
-                        {
-                            _logger.LogInformation("Duplicate score detected for activity {ActivityName} on {MetricDate} for team {TeamSlug}", activityName, metricDate, teamSlug);
-                            return;
-                        }
-
-                        scoreEntries.Add(new Participantscore
-                        {
-                            Scoreid = 0,
-                            Participantid = participant.Participantid,
-                            Activityid = activity.Activityid,
-                            Challengeid = 24,
-                            Teamid = team.Teamid,
-                            Score = string.Equals(activity.Weighttype, "multiplier", StringComparison.OrdinalIgnoreCase) ? value.Value * activity.Weight : activity.Weight,
-                            Timestamp = metricDate,
-                            Validationlink = null
-                        });
-                    }
+                    _logger.LogWarning("No user metrics available for scoring team {TeamSlug}", teamSlug);
+                    return false;
                 }
 
-                // ============================================================
-                // NEW SCORING LOGIC: Aggregate per-user metrics by day
-                // The new API gives us totals_by_feature[] per user. We sum across 
-                // all team users for each day to get team totals.
-                //
-                // Feature mapping (new API feature names → old activity names):
-                //   "code_completion" → TotalCodeSuggestions (code_generation_activity_count)
-                //   "code_completion" → TotalLinesAccepted (loc_added_sum)
-                //   "chat_panel" + "chat_panel_agent_mode" + "chat_panel_custom_mode" → TotalChats (user_initiated_interaction_count)
-                //   "copilot_cli" → TotalChatInsertions (code_acceptance_activity_count)
-                //   "dotcom_chat" → TotalDotComChats (user_initiated_interaction_count)
-                //   "pull_request_summary" → TotalPRSummariesCreated (code_generation_activity_count)
-                //   top-level daily_active = count of users with any activity → ActiveUsersPerDay
-                //   top-level engaged = count of users with interaction → EngagedUsersPerDay
-                // ============================================================
+                // Filter to users whose GitHub login matches a participant in this team
+                var teamUserMetrics = allUserMetrics
+                    .Where(u => u.UserLogin != null && handleToParticipant.ContainsKey(u.UserLogin.ToLowerInvariant()))
+                    .ToList();
 
-                foreach (var dayGroup in metricsByDay)
+                if (teamUserMetrics.Count == 0)
                 {
-                    var metricDate = dayGroup.Key;
-                    var usersForDay = dayGroup.ToList();
+                    _logger.LogWarning("No matching user metrics found for team {TeamSlug}. Participants: [{Handles}], Metrics users sample: [{Sample}]",
+                        teamSlug,
+                        string.Join(", ", handleToParticipant.Keys.Take(5)),
+                        string.Join(", ", allUserMetrics.Take(5).Select(u => u.UserLogin)));
+                    return false;
+                }
 
-                    // ActiveUsersPerDay = number of users with any activity this day
-                    AddScore("ActiveUsersPerDay", metricDate, usersForDay.Count);
+                _logger.LogInformation("Found {Count} matching user metrics for team {TeamSlug} (out of {Total} org users)",
+                    teamUserMetrics.Count, teamSlug, allUserMetrics.Count);
 
-                    // EngagedUsersPerDay = number of users who initiated interactions
-                    var engagedUsers = usersForDay.Count(u => u.UserInitiatedInteractionCount > 0);
-                    AddScore("EngagedUsersPerDay", metricDate, engagedUsers);
+                var activities = await _context.Activities.ToListAsync();
+                var scoreEntries = new List<Participantscore>();
 
-                    // Aggregate feature totals across all team users for this day
-                    int totalCodeSuggestions = 0;
-                    int totalLinesAccepted = 0;
-                    int totalChats = 0;
-                    int totalChatInsertions = 0;
-                    int totalChatCopyEvents = 0; // Not directly available in new API, using code_acceptance from chat features
-                    int totalDotComChats = 0;
-                    int totalPRSummaries = 0;
+                // Process each user's metrics individually
+                foreach (var userMetric in teamUserMetrics)
+                {
+                    var participant = handleToParticipant[userMetric.UserLogin!.ToLowerInvariant()];
+                    var metricDate = userMetric.GetDate();
 
-                    foreach (var user in usersForDay)
+                    // Get existing scores for this participant to avoid duplicates
+                    var existingScores = await _context.Participantscores
+                        .Where(ps => ps.Participantid == participant.Participantid
+                                  && ps.Teamid == team.Teamid
+                                  && ps.Timestamp.HasValue
+                                  && ps.Timestamp.Value.Date == metricDate.Date)
+                        .ToListAsync();
+
+                    void AddScore(string activityName, decimal? value)
                     {
-                        if (user.TotalsByFeature == null) continue;
+                        if (value.HasValue && value.Value > 0)
+                        {
+                            var activity = activities.FirstOrDefault(a => a.Name == activityName);
+                            if (activity == null) return;
 
-                        foreach (var feature in user.TotalsByFeature)
+                            if (existingScores.Any(es => es.Activityid == activity.Activityid))
+                                return;
+
+                            scoreEntries.Add(new Participantscore
+                            {
+                                Scoreid = 0,
+                                Participantid = participant.Participantid,
+                                Activityid = activity.Activityid,
+                                Challengeid = 24,
+                                Teamid = team.Teamid,
+                                Score = string.Equals(activity.Weighttype, "multiplier", StringComparison.OrdinalIgnoreCase)
+                                    ? value.Value * activity.Weight
+                                    : activity.Weight,
+                                Timestamp = metricDate,
+                                Validationlink = null
+                            });
+                        }
+                    }
+
+                    // Score top-level counts
+                    AddScore("ActiveUsersPerDay", 1); // This user was active
+                    if (userMetric.UserInitiatedInteractionCount > 0)
+                        AddScore("EngagedUsersPerDay", 1);
+
+                    // Score feature-level metrics
+                    if (userMetric.TotalsByFeature != null)
+                    {
+                        int totalCodeSuggestions = 0, totalLinesAccepted = 0;
+                        int totalChats = 0, totalChatInsertions = 0;
+                        int totalDotComChats = 0, totalPRSummaries = 0;
+
+                        foreach (var feature in userMetric.TotalsByFeature)
                         {
                             switch (feature.Feature?.ToLowerInvariant())
                             {
                                 case "code_completion":
-                                    // TotalCodeSuggestions = how many code suggestions were generated
                                     totalCodeSuggestions += feature.CodeGenerationActivityCount;
-                                    // TotalLinesAccepted = lines of code actually added by user
                                     totalLinesAccepted += feature.LocAddedSum;
                                     break;
-
                                 case "chat_panel":
                                 case "chat_panel_agent_mode":
                                 case "chat_panel_custom_mode":
-                                    // TotalChats = user-initiated interactions in IDE chat
                                     totalChats += feature.UserInitiatedInteractionCount;
-                                    // TotalChatInsertions = code accepted from chat
                                     totalChatInsertions += feature.CodeAcceptanceActivityCount;
                                     break;
-
                                 case "copilot_cli":
-                                    // CLI interactions also count as chat insertions when code is accepted
                                     totalChatInsertions += feature.CodeAcceptanceActivityCount;
                                     break;
-
                                 case "dotcom_chat":
-                                    // TotalDotComChats = interactions in github.com chat
                                     totalDotComChats += feature.UserInitiatedInteractionCount;
                                     break;
-
                                 case "pull_request_summary":
                                 case "pr_summary":
-                                    // TotalPRSummariesCreated = PR summaries generated
                                     totalPRSummaries += feature.CodeGenerationActivityCount;
                                     break;
                             }
                         }
-                    }
 
-                    AddScore("TotalCodeSuggestions", metricDate, totalCodeSuggestions);
-                    AddScore("TotalLinesAccepted", metricDate, totalLinesAccepted);
-                    AddScore("TotalChats", metricDate, totalChats);
-                    AddScore("TotalChatInsertions", metricDate, totalChatInsertions);
-                    AddScore("TotalChatCopyEvents", metricDate, totalChatCopyEvents > 0 ? totalChatCopyEvents : (int?)null);
-                    AddScore("TotalDotComChats", metricDate, totalDotComChats);
-                    AddScore("TotalPRSummariesCreated", metricDate, totalPRSummaries);
+                        AddScore("TotalCodeSuggestions", totalCodeSuggestions);
+                        AddScore("TotalLinesAccepted", totalLinesAccepted);
+                        AddScore("TotalChats", totalChats);
+                        AddScore("TotalChatInsertions", totalChatInsertions);
+                        AddScore("TotalDotComChats", totalDotComChats);
+                        AddScore("TotalPRSummariesCreated", totalPRSummaries);
+                    }
                 }
 
                 if (scoreEntries.Count == 0)
                 {
-                    _logger.LogInformation("No valid GitHub scores to insert for team {TeamSlug}", teamSlug);
+                    _logger.LogInformation("No new GitHub scores to insert for team {TeamSlug}", teamSlug);
                     return false;
                 }
 
@@ -273,47 +217,5 @@ namespace LeaderboardApp.Services
                 return false;
             }
         }
-
-        // ============================================================
-        // OLD SCORING LOGIC (kept for reference - used nested model iteration):
-        // foreach (var metric in filteredMetrics)
-        // {
-        //     if (metric.IdeChat?.Editors != null)
-        //         foreach (var editor in metric.IdeChat.Editors)
-        //             if (editor.Models != null)
-        //                 foreach (var model in editor.Models)
-        //                 {
-        //                     AddScore("TotalChats", metric.Date, model.TotalChats);
-        //                     AddScore("TotalChatInsertions", metric.Date, model.TotalChatInsertionEvents);
-        //                     AddScore("TotalChatCopyEvents", metric.Date, model.TotalChatCopyEvents);
-        //                 }
-        //
-        //     if (metric.CodeCompletions?.Editors != null)
-        //         foreach (var editor in metric.CodeCompletions.Editors)
-        //             if (editor.Models != null)
-        //                 foreach (var model in editor.Models)
-        //                     if (model.Languages != null)
-        //                         foreach (var language in model.Languages)
-        //                         {
-        //                             AddScore("TotalCodeSuggestions", metric.Date, language.TotalCodeSuggestions);
-        //                             AddScore("TotalCodeAcceptances", metric.Date, language.TotalCodeAcceptances);
-        //                             AddScore("TotalLinesSuggested", metric.Date, language.TotalLinesSuggested);
-        //                             AddScore("TotalLinesAccepted", metric.Date, language.TotalLinesAccepted);
-        //                         }
-        //
-        //     if (metric.DotComChat?.Models != null)
-        //         foreach (var model in metric.DotComChat.Models)
-        //             AddScore("TotalDotComChats", metric.Date, model.TotalChats);
-        //
-        //     if (metric.PullRequests?.Repositories != null)
-        //         foreach (var repo in metric.PullRequests.Repositories)
-        //             if (repo.Models != null)
-        //                 foreach (var model in repo.Models)
-        //                     AddScore("TotalPRSummariesCreated", metric.Date, model.TotalPRSummariesCreated);
-        //
-        //     AddScore("ActiveUsersPerDay", metric.Date, metric.TotalActiveUsers);
-        //     AddScore("EngagedUsersPerDay", metric.Date, metric.TotalEngagedUsers);
-        // }
-        // ============================================================
     }
 }

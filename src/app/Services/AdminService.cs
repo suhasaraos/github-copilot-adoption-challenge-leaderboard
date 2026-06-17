@@ -178,9 +178,21 @@ namespace LeaderboardApp.Services
             {
                 var slug = await _githubService.CreateTeamAsync(team.Name);
                 if (!string.IsNullOrWhiteSpace(slug))
+                {
                     team.GitHubSlug = slug;
+                }
                 else
-                    team.GitHubSlug = "notavailable"; // Default when GitHub is disabled
+                {
+                    // Generate a slug from the team name as fallback
+                    var generatedSlug = team.Name.ToLowerInvariant()
+                        .Replace(" ", "-")
+                        .Replace("'", "")
+                        .Replace("\"", "");
+                    generatedSlug = System.Text.RegularExpressions.Regex.Replace(generatedSlug, @"[^a-z0-9\-]", "");
+                    generatedSlug = System.Text.RegularExpressions.Regex.Replace(generatedSlug, @"-+", "-").Trim('-');
+                    team.GitHubSlug = string.IsNullOrWhiteSpace(generatedSlug) ? $"team-{Guid.NewGuid():N}" : generatedSlug;
+                    _logger.LogWarning("GitHub team creation failed for '{TeamName}'. Using generated slug: {Slug}", team.Name, team.GitHubSlug);
+                }
             }
             else
             {
@@ -259,6 +271,10 @@ namespace LeaderboardApp.Services
             {
                 await _githubService.DeleteTeamAsync(slug);
             }
+
+            // Remove participant scores for this team
+            var participantScores = _context.Participantscores.Where(ps => ps.Teamid == teamId);
+            _context.Participantscores.RemoveRange(participantScores);
 
             // Remove leaderboard entries for this team
             var leaderboardEntries = _context.Leaderboardentries.Where(e => e.Teamid == teamId);

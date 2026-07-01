@@ -413,3 +413,6 @@ FodyWeavers.xsd
 # Local development settings with sensitive values (TenantId, ClientId, connection strings)
 **/appsettings.Development.json
 **/appsettings.Local.json
+# Diagnostic log downloads
+app-logs*
+

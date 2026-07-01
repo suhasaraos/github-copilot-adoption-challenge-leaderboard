@@ -26,7 +26,7 @@ namespace LeaderboardApp.Controllers
             var model = new HomeViewModel
             {
                 Leaderboard = leaderboard,
-                Challenges = challenges !=  null ? [.. challenges.OrderByDescending(a => a.PostedDate)] : null
+                Challenges = challenges
             };
 
             return View(model);
@@ -52,7 +52,7 @@ namespace LeaderboardApp.Controllers
         public async Task<IActionResult> AllChallenges()
         {
             var challenges = await _challengesService.GetChallengesAsync();
-            return View(challenges?.OrderByDescending(a => a.PostedDate).ToList());
+            return View(challenges);
         }        
     }
 }

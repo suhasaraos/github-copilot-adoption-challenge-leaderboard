@@ -41,9 +41,11 @@ namespace LeaderboardApp.Services
                 CREATE TABLE Teams (
                     TeamId UNIQUEIDENTIFIER PRIMARY KEY,
                     Name NVARCHAR(MAX) NOT NULL,
-                    Icon NVARCHAR(MAX) NOT NULL,
+                    -- Icon NVARCHAR(MAX) NOT NULL,
+                    Icon NVARCHAR(MAX) NULL,
                     Tagline NVARCHAR(MAX) NOT NULL,
-                    GitHubSlug NVARCHAR(450) NOT NULL
+                    -- GitHubSlug NVARCHAR(450) NOT NULL
+                    GitHubSlug NVARCHAR(450) NULL
                 );");
 
             // 2. Participants

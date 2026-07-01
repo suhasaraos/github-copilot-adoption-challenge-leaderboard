@@ -90,8 +90,8 @@ namespace LeaderboardApp.Services
                     }
                     else
                     {
-                        // Unscheduled: fall back to the DB PostedDate field
-                        return c.PostedDate == DateTime.MinValue || c.PostedDate <= now;
+                        // Unscheduled challenges are hidden until added to the schedule
+                        return false;
                     }
                 })
                 .Select(c =>

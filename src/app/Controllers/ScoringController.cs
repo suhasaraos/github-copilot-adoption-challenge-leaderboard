@@ -105,7 +105,7 @@ namespace LeaderboardApp.Controllers
             await _context.SaveChangesAsync();
 
             // Update the leaderboard
-            //await UpdateLeaderboard(participantScore.Participantid);
+            await UpdateLeaderboard(participantScore.Participantid);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
@@ -122,38 +122,38 @@ namespace LeaderboardApp.Controllers
         }
 
 
-        //// Method to update leaderboard based on participant scores
-        //private async Task UpdateLeaderboard(Guid participantId)
-        //{
-        //    var participant = await _context.Participants.Include(p => p.Team).FirstOrDefaultAsync(p => p.Participantid == participantId);
-        //    if (participant == null) return;
+        // Method to update leaderboard based on participant scores
+        private async Task UpdateLeaderboard(Guid participantId)
+        {
+            var participant = await _context.Participants.Include(p => p.Team).FirstOrDefaultAsync(p => p.Participantid == participantId);
+            if (participant == null) return;
 
-        //    var teamId = participant.Teamid;
+            var teamId = participant.Teamid;
 
-        //    var teamScores = await _context.Participantscores
-        //                                   .Where(ps => ps.Participant.Teamid == teamId)
-        //                                   .SumAsync(ps => (int)ps.Score); // Casting decimal to int
+            var teamScores = await _context.Participantscores
+                                           .Where(ps => ps.Participant.Teamid == teamId)
+                                           .SumAsync(ps => (int)ps.Score);
 
-        //    var leaderboardEntry = await _context.Leaderboardentries.FirstOrDefaultAsync(le => le.Teamid == teamId);
+            var leaderboardEntry = await _context.Leaderboardentries.FirstOrDefaultAsync(le => le.Teamid == teamId);
 
-        //    if (leaderboardEntry != null)
-        //    {
-        //        leaderboardEntry.Score = teamScores;
-        //        leaderboardEntry.Lastupdated = DateTime.UtcNow;
-        //    }
-        //    else
-        //    {
-        //        _context.Leaderboardentries.Add(new Leaderboardentry
-        //        {
-        //            Leaderboardentryid = Guid.NewGuid(),
-        //            Teamid = teamId,
-        //            Teamname = participant.Team!.Name,
-        //            Score = teamScores,
-        //            Lastupdated = DateTime.UtcNow
-        //        });
-        //    }
+            if (leaderboardEntry != null)
+            {
+                leaderboardEntry.Score = teamScores;
+                leaderboardEntry.Lastupdated = DateTime.UtcNow;
+            }
+            else
+            {
+                _context.Leaderboardentries.Add(new Leaderboardentry
+                {
+                    Leaderboardentryid = Guid.NewGuid(),
+                    Teamid = teamId,
+                    Teamname = participant.Team!.Name,
+                    Score = teamScores,
+                    Lastupdated = DateTime.UtcNow
+                });
+            }
 
-        //    await _context.SaveChangesAsync();
-        //}
+            await _context.SaveChangesAsync();
+        }
     }
 }

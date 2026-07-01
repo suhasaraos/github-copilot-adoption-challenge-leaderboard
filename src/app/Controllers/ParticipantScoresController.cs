@@ -71,7 +71,7 @@ namespace LeaderboardApp.Controllers
             await _context.SaveChangesAsync();
 
             // Update the leaderboard
-            //await UpdateLeaderboard(participantScore.Participantid);
+            await UpdateLeaderboard(participantScore.Participantid);
 
             return CreatedAtAction(nameof(GetParticipantScores), new { id = participantScore.Scoreid }, participantScore);
         }

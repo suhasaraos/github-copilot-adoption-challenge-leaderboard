@@ -169,12 +169,30 @@ namespace LeaderboardApp.Services
         {
             team.Teamid = Guid.NewGuid();
 
+            // Default icon if none provided
+            if (string.IsNullOrWhiteSpace(team.Icon))
+                team.Icon = "https://img.icons8.com/fluency/48/team.png";
+
             // If no slug was provided, create team on GitHub and use the slug returned
             if (string.IsNullOrWhiteSpace(team.GitHubSlug))
             {
                 var slug = await _githubService.CreateTeamAsync(team.Name);
                 if (!string.IsNullOrWhiteSpace(slug))
+                {
                     team.GitHubSlug = slug;
+                }
+                else
+                {
+                    // Generate a slug from the team name as fallback
+                    var generatedSlug = team.Name.ToLowerInvariant()
+                        .Replace(" ", "-")
+                        .Replace("'", "")
+                        .Replace("\"", "");
+                    generatedSlug = System.Text.RegularExpressions.Regex.Replace(generatedSlug, @"[^a-z0-9\-]", "");
+                    generatedSlug = System.Text.RegularExpressions.Regex.Replace(generatedSlug, @"-+", "-").Trim('-');
+                    team.GitHubSlug = string.IsNullOrWhiteSpace(generatedSlug) ? $"team-{Guid.NewGuid():N}" : generatedSlug;
+                    _logger.LogWarning("GitHub team creation failed for '{TeamName}'. Using generated slug: {Slug}", team.Name, team.GitHubSlug);
+                }
             }
             else
             {
@@ -183,6 +201,14 @@ namespace LeaderboardApp.Services
                     "Creating team '{TeamName}' with manually supplied GitHub slug '{Slug}'",
                     team.Name, team.GitHubSlug);
             }
+
+            // Original code (before fix):
+            // if (string.IsNullOrWhiteSpace(team.GitHubSlug))
+            // {
+            //     var slug = await _githubService.CreateTeamAsync(team.Name);
+            //     if (!string.IsNullOrWhiteSpace(slug))
+            //         team.GitHubSlug = slug;
+            // }
 
             _context.Teams.Add(team);
             await _context.SaveChangesAsync();
@@ -208,7 +234,8 @@ namespace LeaderboardApp.Services
             }
 
             existing.Name = team.Name;
-            existing.Icon = team.Icon;
+            // existing.Icon = team.Icon;
+            existing.Icon = string.IsNullOrWhiteSpace(team.Icon) ? existing.Icon : team.Icon;
             existing.Tagline = team.Tagline;
             existing.GitHubSlug = team.GitHubSlug;
             await _context.SaveChangesAsync();
@@ -244,6 +271,10 @@ namespace LeaderboardApp.Services
             {
                 await _githubService.DeleteTeamAsync(slug);
             }
+
+            // Remove participant scores for this team
+            var participantScores = _context.Participantscores.Where(ps => ps.Teamid == teamId);
+            _context.Participantscores.RemoveRange(participantScores);
 
             // Remove leaderboard entries for this team
             var leaderboardEntries = _context.Leaderboardentries.Where(e => e.Teamid == teamId);

@@ -39,6 +39,7 @@ namespace LeaderboardApp.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateTeam([FromBody] Team team)
         {
             team.Teamid = Guid.NewGuid();
